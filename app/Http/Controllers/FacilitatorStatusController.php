@@ -8,6 +8,9 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FacilitatorStatusController extends Controller
 {
@@ -74,5 +77,70 @@ class FacilitatorStatusController extends Controller
         $facilitatorStatus->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    // List every student currently marked "potential" for at least one course,
+    // with the full set of courses they're a potential facilitator for.
+    public function potential(): JsonResponse
+    {
+        return response()->json(['facilitators' => $this->potentialFacilitators()]);
+    }
+
+    public function exportPotential(): StreamedResponse
+    {
+        $facilitators = $this->potentialFacilitators();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Potential Facilitators');
+        $sheet->fromArray(['Name', 'Email', 'Phone Number', 'Courses'], null, 'A1');
+
+        $row = 2;
+        foreach ($facilitators as $facilitator) {
+            $sheet->fromArray([
+                $facilitator['name'],
+                $facilitator['email'],
+                $facilitator['phone_number'] ?? '',
+                implode(', ', $facilitator['courses']),
+            ], null, "A{$row}");
+            $row++;
+        }
+
+        foreach (range('A', 'D') as $column) {
+            $sheet->getColumnDimension($column)->setAutoSize(true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $filename = 'potential-facilitators-' . now()->format('Y-m-d') . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    private function potentialFacilitators(): array
+    {
+        return FacilitatorStatus::query()
+            ->where('status', 'potential')
+            ->with(['student:id,name,email,phone_number', 'courseProfile:id,title'])
+            ->get()
+            ->filter(fn (FacilitatorStatus $status) => $status->student !== null)
+            ->groupBy('student_id')
+            ->map(function ($statuses) {
+                $student = $statuses->first()->student;
+
+                return [
+                    'id' => $student->id,
+                    'name' => $student->name,
+                    'email' => $student->email,
+                    'phone_number' => $student->phone_number,
+                    'courses' => $statuses->pluck('courseProfile.title')->filter()->values()->all(),
+                ];
+            })
+            ->sortBy('name')
+            ->values()
+            ->all();
     }
 }

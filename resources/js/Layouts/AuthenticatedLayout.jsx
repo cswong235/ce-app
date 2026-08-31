@@ -1,108 +1,118 @@
-import Dropdown from '@/Components/Dropdown';
-import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
+import SidebarNavLink from '@/Components/SidebarNavLink';
+import ReminderToastWatcher from '@/Components/ReminderToastWatcher';
+import {
+    ClassIcon,
+    CourseProfileIcon,
+    DashboardIcon,
+    MemberListIcon,
+    ReminderIcon,
+    UserCircleIcon,
+} from '@/Components/NavIcons';
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import logo from '@/Assets/CEApp.png';
+
+const navigation = [
+    { name: 'Dashboard', route: 'dashboard', icon: DashboardIcon },
+    { name: 'Course Profiles', route: 'course_profile', icon: CourseProfileIcon },
+    { name: 'Classes', route: 'class', icon: ClassIcon },
+    { name: 'Reminders', route: 'reminder', icon: ReminderIcon },
+    { name: 'Member List', route: 'user', icon: MemberListIcon },
+];
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] =
         useState(false);
+    const [showingUserMenu, setShowingUserMenu] = useState(false);
 
     return (
         <div className="min-h-screen bg-gray-100">
-            <nav className="border-b border-gray-100 bg-white">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="flex h-16 justify-between">
-                        <div className="flex">
-                            <div className="flex shrink-0 items-center">
-                                <Link href="/dashboard">
-                                    <img src={logo} alt="CE App logo" className="h-8"/>
+            <ReminderToastWatcher />
+            {/* Desktop vertical sidebar: collapsed to icons, slides out on hover */}
+            <aside className="group fixed inset-y-0 left-0 z-40 hidden w-16 flex-col border-r border-gray-200 bg-white transition-all duration-300 ease-in-out hover:w-64 hover:shadow-xl sm:flex">
+                <div className="flex h-16 shrink-0 items-center justify-center overflow-hidden border-b border-gray-100 px-4">
+                    <Link
+                        href={route('dashboard')}
+                        className="flex shrink-0 items-center"
+                    >
+                        <img
+                            src={logo}
+                            alt="CE App logo"
+                            className="h-8"
+                        />
+                    </Link>
+                </div>
+
+                <nav className="flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-2 py-4">
+                    {navigation.map((item) => (
+                        <SidebarNavLink
+                            key={item.name}
+                            href={route(item.route)}
+                            active={route().current(item.route)}
+                            icon={item.icon}
+                        >
+                            {item.name}
+                        </SidebarNavLink>
+                    ))}
+                </nav>
+
+                <div className="relative shrink-0 border-t border-gray-100 p-2">
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setShowingUserMenu((previousState) => !previousState)
+                        }
+                        className="flex w-full items-center rounded-md px-3 py-2.5 text-sm font-medium text-gray-600 transition duration-150 ease-in-out hover:bg-gray-50 hover:text-gray-900"
+                    >
+                        <UserCircleIcon className="h-6 w-6 shrink-0" />
+                        <span className="ml-3 overflow-hidden whitespace-nowrap opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                            {user.name}
+                        </span>
+                    </button>
+
+                    {showingUserMenu && (
+                        <>
+                            <div
+                                className="fixed inset-0 z-40"
+                                onClick={() => setShowingUserMenu(false)}
+                            />
+                            <div className="absolute bottom-full left-2 z-50 mb-2 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5">
+                                <Link
+                                    href={route('profile.edit')}
+                                    className="block px-4 py-2 text-sm text-gray-700 transition duration-150 ease-in-out hover:bg-gray-100"
+                                    onClick={() => setShowingUserMenu(false)}
+                                >
+                                    Profile
+                                </Link>
+                                <Link
+                                    href={route('logout')}
+                                    method="post"
+                                    as="button"
+                                    className="block w-full px-4 py-2 text-start text-sm text-gray-700 transition duration-150 ease-in-out hover:bg-gray-100"
+                                    onClick={() => setShowingUserMenu(false)}
+                                >
+                                    Log Out
                                 </Link>
                             </div>
+                        </>
+                    )}
+                </div>
+            </aside>
 
-                            <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink
-                                    href={route('dashboard')}
-                                    active={route().current('dashboard')}
-                                >
-                                    Dashboard
-                                </NavLink>
-                            </div>
-                            <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink
-                                    href={route('course_profile')}
-                                    active={route().current('course_profile')}
-                                >
-                                    Course Profiles
-                                </NavLink>
-                            </div>
-                            <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink
-                                    href={route('class')}
-                                    active={route().current('class')}
-                                >
-                                    Classes
-                                </NavLink>
-                            </div>
-                            <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink
-                                    href={route('user')}
-                                    active={route().current('user')}
-                                >
-                                    Member List
-                                </NavLink>
-                            </div>
+            {/* Mobile top nav */}
+            <nav className="border-b border-gray-100 bg-white sm:hidden">
+                <div className="mx-auto max-w-7xl px-4">
+                    <div className="flex h-16 justify-between">
+                        <div className="flex shrink-0 items-center">
+                            <Link href="/dashboard">
+                                <img src={logo} alt="CE App logo" className="h-8" />
+                            </Link>
                         </div>
 
-                        <div className="hidden sm:ms-6 sm:flex sm:items-center">
-                            <div className="relative ms-3">
-                                <Dropdown>
-                                    <Dropdown.Trigger>
-                                        <span className="inline-flex rounded-md">
-                                            <button
-                                                type="button"
-                                                className="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
-                                            >
-                                                {user.name}
-
-                                                <svg
-                                                    className="-me-0.5 ms-2 h-4 w-4"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
-                                                >
-                                                    <path
-                                                        fillRule="evenodd"
-                                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                        clipRule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </span>
-                                    </Dropdown.Trigger>
-
-                                    <Dropdown.Content>
-                                        <Dropdown.Link
-                                            href={route('profile.edit')}
-                                        >
-                                            Profile
-                                        </Dropdown.Link>
-                                        <Dropdown.Link
-                                            href={route('logout')}
-                                            method="post"
-                                            as="button"
-                                        >
-                                            Log Out
-                                        </Dropdown.Link>
-                                    </Dropdown.Content>
-                                </Dropdown>
-                            </div>
-                        </div>
-
-                        <div className="-me-2 flex items-center sm:hidden">
+                        <div className="-me-2 flex items-center">
                             <button
                                 onClick={() =>
                                     setShowingNavigationDropdown(
@@ -145,12 +155,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     </div>
                 </div>
 
-                <div
-                    className={
-                        (showingNavigationDropdown ? 'block' : 'hidden') +
-                        ' sm:hidden'
-                    }
-                >
+                <div className={showingNavigationDropdown ? 'block' : 'hidden'}>
                     <div className="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink
                             href={route('dashboard')}
@@ -169,6 +174,12 @@ export default function AuthenticatedLayout({ header, children }) {
                             active={route().current('class')}
                         >
                             Classes
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('reminder')}
+                            active={route().current('reminder')}
+                        >
+                            Reminders
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
                             href={route('user')}
@@ -204,15 +215,17 @@ export default function AuthenticatedLayout({ header, children }) {
                 </div>
             </nav>
 
-            {header && (
-                <header className="bg-white shadow">
-                    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                        {header}
-                    </div>
-                </header>
-            )}
+            <div className="sm:pl-16">
+                {header && (
+                    <header className="bg-white shadow">
+                        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+                            {header}
+                        </div>
+                    </header>
+                )}
 
-            <main>{children}</main>
+                <main>{children}</main>
+            </div>
         </div>
     );
 }

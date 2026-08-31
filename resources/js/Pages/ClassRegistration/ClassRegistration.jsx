@@ -1,17 +1,18 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { PrimaryButton, DangerButton } from '@/Components/Button';
+import SecondaryButton from '@/Components/SecondaryButton';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
-import PaginationControls from '@/Components/PaginationControls';
 import ViewRegistrationModal from './Partials/ViewRegistrationModal';
 import ApproveRegistrationModal from './Partials/ApproveRegistrationModal';
 import RejectRegistrationModal from './Partials/RejectRegistrationModal';
 
+const PAGE_SIZE = 10;
+
 export default function ClassRegistration() {
     const { registrations = [] } = usePage().props;
-    
+
     const [currentPage, setCurrentPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState('pending');
     const [searchTerm, setSearchTerm] = useState('');
@@ -19,8 +20,6 @@ export default function ClassRegistration() {
     const [viewModalOpen, setViewModalOpen] = useState(false);
     const [approveModalOpen, setApproveModalOpen] = useState(false);
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
-
-    const itemsPerPage = 10;
 
     // Filter by status and search term
     const filteredRegistrations = useMemo(() => {
@@ -34,13 +33,18 @@ export default function ClassRegistration() {
         });
     }, [registrations, statusFilter, searchTerm]);
 
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [registrations.length, statusFilter, searchTerm]);
+
     // Paginate
-    const totalPages = Math.ceil(filteredRegistrations.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(filteredRegistrations.length / PAGE_SIZE));
     const paginatedRegistrations = filteredRegistrations.slice(
-        startIndex,
-        startIndex + itemsPerPage,
+        (currentPage - 1) * PAGE_SIZE,
+        currentPage * PAGE_SIZE,
     );
+    const startIndex = filteredRegistrations.length ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
+    const endIndex = Math.min(currentPage * PAGE_SIZE, filteredRegistrations.length);
 
     const handleView = (registration) => {
         setSelectedRegistration(registration);
@@ -114,25 +118,28 @@ export default function ClassRegistration() {
                                     </div>
 
                                     <div className="flex items-end">
-                                        <button
+                                        <SecondaryButton
+                                            type="button"
                                             onClick={() => {
                                                 setStatusFilter('pending');
                                                 setSearchTerm('');
                                                 setCurrentPage(1);
                                             }}
-                                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                                         >
                                             Reset
-                                        </button>
+                                        </SecondaryButton>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Results Summary */}
-                            <div className="mb-4 text-sm text-gray-600">
-                                Showing {paginatedRegistrations.length === 0 ? 0 : startIndex + 1} to{' '}
-                                {Math.min(startIndex + itemsPerPage, filteredRegistrations.length)} of{' '}
-                                {filteredRegistrations.length} registrations
+                            <div className="mb-4 flex items-center justify-between text-sm text-gray-600">
+                                <span>
+                                    Showing {filteredRegistrations.length ? startIndex : 0} - {endIndex} of {filteredRegistrations.length} registrations
+                                </span>
+                                <span>
+                                    Page {currentPage} of {totalPages}
+                                </span>
                             </div>
 
                             {/* Table */}
@@ -225,15 +232,41 @@ export default function ClassRegistration() {
                             </div>
 
                             {/* Pagination */}
-                            <div className="mt-6 flex items-center justify-between">
-                                <div className="text-sm text-gray-600">
-                                    Page {currentPage} of {totalPages || 1}
+                            <div className="mt-4 flex items-center justify-between gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                                    disabled={currentPage === 1}
+                                    className="rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    Previous
+                                </button>
+
+                                <div className="flex items-center gap-2 text-sm text-gray-500">
+                                    {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                                        <button
+                                            key={page}
+                                            type="button"
+                                            onClick={() => setCurrentPage(page)}
+                                            className={`h-8 w-8 rounded ${
+                                                currentPage === page
+                                                    ? 'bg-indigo-600 text-white'
+                                                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                                            }`}
+                                        >
+                                            {page}
+                                        </button>
+                                    ))}
                                 </div>
-                                <PaginationControls
-                                    currentPage={currentPage}
-                                    totalPages={totalPages}
-                                    onPageChange={setCurrentPage}
-                                />
+
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    Next
+                                </button>
                             </div>
                         </div>
                     </div>

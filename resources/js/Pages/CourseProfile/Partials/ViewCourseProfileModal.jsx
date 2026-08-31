@@ -1,7 +1,13 @@
 import AvailableClassesModal from './AvailableClassesModal';
 import Modal from '@/Components/Modal';
 import SecondaryButton from '@/Components/SecondaryButton';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+
+const modeLabels = {
+    online: 'Online',
+    hybrid: 'Hybrid',
+    physical: 'Physical',
+};
 
 function Detail({ label, children }) {
     return (
@@ -16,8 +22,18 @@ function Detail({ label, children }) {
     );
 }
 
-export default function ViewCourseProfileModal({ courseProfile, onClose }) {
+export default function ViewCourseProfileModal({ courseProfile, classes, onClose }) {
     const [showingClassesModal, setShowingClassesModal] = useState(false);
+
+    const modesOffered = useMemo(() => {
+        if (!courseProfile || !classes) return [];
+
+        const modes = classes
+            .filter((cls) => cls.course_profile_id === courseProfile.id)
+            .map((cls) => cls.mode);
+
+        return [...new Set(modes)].sort();
+    }, [courseProfile, classes]);
 
     const close = () => {
         setShowingClassesModal(false);
@@ -95,7 +111,18 @@ export default function ViewCourseProfileModal({ courseProfile, onClose }) {
                                 </Detail>
                             </div>
                             <Detail label="Modes offered">
-                                <span className="italic text-gray-400">TBA</span>
+                                {modesOffered.length > 0 ? (
+                                    <div className="inline-flex flex-wrap gap-2">
+                                        {modesOffered.map((mode) => (
+                                            <span
+                                                key={mode}
+                                                className="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800"
+                                            >
+                                                {modeLabels[mode] ?? mode}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : null}
                             </Detail>
                         </dl>
 
@@ -123,6 +150,7 @@ export default function ViewCourseProfileModal({ courseProfile, onClose }) {
                 show={showingClassesModal}
                 onClose={() => setShowingClassesModal(false)}
                 courseProfile={courseProfile}
+                classes={classes}
             />
         </>
     );

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CourseProfileController;
 use App\Http\Controllers\ClassController;
@@ -10,15 +11,17 @@ use App\Http\Controllers\FacilitatorStatusController;
 use App\Http\Controllers\CommitteeInviteController;
 use App\Http\Controllers\GraduationItemController;
 use App\Http\Controllers\ClassAdminController;
+use App\Http\Controllers\ClassEnrollmentController;
+use App\Http\Controllers\ReminderController;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::redirect('/', '/dashboard');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
     Route::middleware('auth')->group(function () {
     
@@ -44,6 +47,24 @@ Route::get('/dashboard', function () {
         Route::post('/class', [ClassController::class, 'store'])->name('class.store');
         Route::put('/class/{class}', [ClassController::class, 'update'])->name('class.update');
         Route::delete('/class/{class}', [ClassController::class, 'destroy'])->name('class.destroy');
+        Route::get('/class/{class}', [ClassController::class, 'show'])->name('class.show');
+
+        Route::post('/class/{class}/admin', [ClassAdminController::class, 'store'])->name('class_admin.store');
+        Route::delete('/class/{class}/admin', [ClassAdminController::class, 'destroy'])->name('class_admin.destroy');
+
+        Route::post('/class/{class}/facilitators', [ClassController::class, 'addFacilitator'])->name('class.add_facilitator');
+        Route::delete('/class/{class}/facilitators/{facilitator}', [ClassController::class, 'removeFacilitator'])->name('class.remove_facilitator');
+        Route::post('/class/{class}/attendance-record', [ClassController::class, 'uploadAttendanceRecord'])->name('class.upload_attendance_record');
+
+        Route::patch('/class/{class}/graduation-date', [GraduationItemController::class, 'updateClassDate'])->name('graduation_item.update_date');
+        Route::post('/class/{class}/graduation-items', [GraduationItemController::class, 'store'])->name('graduation_item.store');
+        Route::delete('/graduation-items/{graduationItem}', [GraduationItemController::class, 'destroy'])->name('graduation_item.destroy');
+
+        Route::patch('/class-enrollments/{enrollment}/status', [ClassEnrollmentController::class, 'updateStatus'])->name('class_enrollment.update_status');
+        Route::post('/class-enrollments/{enrollment}/receipt', [ClassEnrollmentController::class, 'uploadReceipt'])->name('class_enrollment.upload_receipt');
+
+        Route::patch('/class-enrollments/{enrollment}/testimonial', [ClassEnrollmentController::class, 'updateTestimonial'])
+            ->name('class_enrollment.update_testimonial');
 
         Route::get('/batch', [BatchController::class, 'index'])->name('batch');
         Route::post('/batch', [BatchController::class, 'store'])->name('batch.store');
@@ -76,11 +97,22 @@ Route::get('/dashboard', function () {
             ->name('facilitator_status.update');
         Route::delete('/facilitator-status/{facilitatorStatus}', [FacilitatorStatusController::class, 'destroy'])
             ->name('facilitator_status.destroy');
+        Route::get('/facilitator-status/potential', [FacilitatorStatusController::class, 'potential'])
+            ->name('facilitator_status.potential');
+        Route::get('/facilitator-status/potential/export', [FacilitatorStatusController::class, 'exportPotential'])
+            ->name('facilitator_status.potential_export');
 
         Route::get('/user/search', [UserController::class, 'search'])->name('user.search');
         Route::get('/user', [UserController::class, 'index'])->name('user');
         Route::get('/user/{user}', [UserController::class, 'show'])->name('user.show');
         Route::delete('/user/{user}', [UserController::class, 'destroy'])->name('user.destroy');
+
+        Route::get('/reminder', [ReminderController::class, 'index'])->name('reminder');
+        Route::post('/reminder', [ReminderController::class, 'store'])->name('reminder.store');
+        Route::put('/reminder/{reminder}', [ReminderController::class, 'update'])->name('reminder.update');
+        Route::delete('/reminder/{reminder}', [ReminderController::class, 'destroy'])->name('reminder.destroy');
+        Route::get('/reminder-next-due', [ReminderController::class, 'nextDue'])->name('reminder.next_due');
+        Route::get('/reminder-notifications', [ReminderController::class, 'notifications'])->name('reminder.notifications');
 
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

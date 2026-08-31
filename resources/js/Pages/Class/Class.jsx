@@ -5,7 +5,7 @@ import { Head, router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import CreateClassModal from './Partials/CreateClassModal';
 import UpdateClassModal from './Partials/UpdateClassModal';
-import ViewClassModal from './Partials/ViewClassModal';
+import ManageClassModal from './Partials/ManageClassModal';
 
 const PAGE_SIZE = 8;
 
@@ -26,10 +26,11 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
     const [statusFilter, setStatusFilter] = useState('all');
     const [deletingClass, setDeletingClass] = useState(null);
     const [deleteProcessing, setDeleteProcessing] = useState(false);
+    const [courseProfileFilter, setCourseProfileFilter] = useState('all');
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [classes.length, searchTerm, statusFilter]);
+    }, [classes.length, searchTerm, statusFilter, courseProfileFilter]);
 
     const filteredClasses = useMemo(() => {
         const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -43,9 +44,12 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
             const matchesStatus =
                 statusFilter === 'all' || classItem.status === statusFilter;
 
-            return matchesSearch && matchesStatus;
+            const matchesCourseProfile =
+                courseProfileFilter === 'all' || classItem.course_profile_id === Number(courseProfileFilter);
+
+            return matchesSearch && matchesStatus && matchesCourseProfile;
         }).sort((a, b) => a.name.localeCompare(b.name));
-    }, [classes, searchTerm, statusFilter]);
+    }, [classes, searchTerm, statusFilter, courseProfileFilter]);
 
     const totalPages = Math.max(1, Math.ceil(filteredClasses.length / PAGE_SIZE));
     const paginatedClasses = filteredClasses.slice(
@@ -119,6 +123,22 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
 
                                     <div className="w-full md:max-w-xs">
                                         <label className="mb-1 block text-sm font-medium text-gray-700">
+                                            Filter by course
+                                        </label>
+                                        <select
+                                            value={courseProfileFilter}
+                                            onChange={(event) => setCourseProfileFilter(event.target.value)}
+                                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        >
+                                            <option value="all">All courses</option>
+                                            {courseProfileOptions.map((profile) => (
+                                                <option key={profile.id} value={profile.id}>{profile.title}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="w-full md:max-w-xs">
+                                        <label className="mb-1 block text-sm font-medium text-gray-700">
                                             Filter by status
                                         </label>
                                         <select
@@ -152,7 +172,9 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                                         <th className="p-2">Class Name</th>
                                         <th>Course Profile</th>
                                         <th>Status</th>
-                                        <th>Registration Closing</th>
+                                        <th>Registered Students</th>
+                                        <th>Dates</th>
+                                        <th>Time</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -167,13 +189,15 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                                                         {statusLabels[classItem.status] ?? classItem.status}
                                                     </span>
                                                 </td>
+                                                <td>{classItem.enrollments_count ?? 0}</td>
                                                 <td>
-                                                    {classItem.registration_closing_date
-                                                        ? new Date(classItem.registration_closing_date).toLocaleDateString('en-GB', {
-                                                            day: '2-digit',
-                                                            month: 'short',
-                                                            year: 'numeric',
-                                                        })
+                                                    {classItem.start_date && classItem.end_date
+                                                        ? `${new Date(classItem.start_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} – ${new Date(classItem.end_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`
+                                                        : 'TBA'}
+                                                </td>
+                                                <td>
+                                                    {classItem.start_time && classItem.end_time
+                                                        ? `${classItem.start_time} – ${classItem.end_time}`
                                                         : 'TBA'}
                                                 </td>
                                                 <td>
@@ -262,7 +286,7 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                                         ))
                                     ) : (
                                         <tr>
-                                            <td className="p-4 text-sm text-gray-500" colSpan="5">
+                                            <td className="p-4 text-sm text-gray-500" colSpan="7">
                                                 No classes found.
                                             </td>
                                         </tr>
@@ -326,8 +350,9 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                 onClose={() => setEditingClass(null)}
             />
 
-            <ViewClassModal
-                classItem={selectedClass}
+            <ManageClassModal
+                classId={selectedClass?.id}
+                show={Boolean(selectedClass)}
                 onClose={() => setSelectedClass(null)}
             />
 
@@ -339,7 +364,7 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                 itemName={deletingClass?.name}
                 processing={deleteProcessing}
             />
-            
+
         </AuthenticatedLayout>
     );
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -15,7 +16,6 @@ class Classes extends Model
 
     protected $fillable = [
         'course_profile_id',
-        'facilitator_id',
         'name',
         'description',
         'status',
@@ -27,6 +27,7 @@ class Classes extends Model
         'start_time',
         'end_time',
         'graduation_date',
+        'attendance_record_path',
     ];
 
     public function courseProfile(): BelongsTo
@@ -34,9 +35,11 @@ class Classes extends Model
         return $this->belongsTo(CourseProfile::class);
     }
 
-    public function facilitator(): BelongsTo
+    public function facilitators(): BelongsToMany
     {
-        return $this->belongsTo(User::class, 'facilitator_id');
+        return $this->belongsToMany(User::class, 'class_facilitators', 'class_id', 'facilitator_id')
+            ->withPivot('assigned_at')
+            ->withTimestamps();
     }
 
     public function classAdmin(): HasOne

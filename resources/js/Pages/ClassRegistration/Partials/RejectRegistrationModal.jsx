@@ -53,13 +53,13 @@ export default function RejectRegistrationModal({ registration, open, onClose, o
 
                 <div className="mt-6 flex justify-end space-x-4">
                     <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
-                    <button
+                    <SecondaryButton
                         type="submit"
                         disabled={processing}
-                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                        className="border-0 bg-red-600 text-white hover:bg-red-700"
                     >
                         {processing ? 'Rejecting...' : 'Reject'}
-                    </button>
+                    </SecondaryButton>
                 </div>
             </form>
         </Modal>

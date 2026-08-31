@@ -1,80 +1,120 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import SecondaryButton from '@/Components/SecondaryButton';
-import AddStudentModal from './Partials/AddStudentModal';
-import AddCommitteeModal from './Partials/AddCommitteeModal';
-import ExportPotentialFacilitatorsModal from './Partials/ExportPotentialFacilitatorsModal';
+import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal';
+import CreateReminderModal from './Partials/CreateReminderModal';
+import UpdateReminderModal from './Partials/UpdateReminderModal';
+import ViewReminderModal from './Partials/ViewReminderModal';
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
-import ViewUserModal from './Partials/ViewUserModal';
-import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal';
-import placeholder_avatar from '@/Assets/Placeholder.png';
 
 const PAGE_SIZE = 8;
 
-export default function UserPage({ users = [] }) {
-    const [selectedUser, setSelectedUser] = useState(null);
-    const [deletingUser, setDeletingUser] = useState(null);
+const statusLabels = {
+    upcoming: 'Upcoming',
+    passed: 'Passed',
+};
+
+const statusColors = {
+    upcoming: 'bg-indigo-100 text-indigo-700',
+    passed: 'bg-gray-100 text-gray-600',
+};
+
+const sortOptions = [
+    { value: 'remind_soonest', label: 'Reminder Date (Soonest)' },
+    { value: 'remind_latest', label: 'Reminder Date (Latest)' },
+    { value: 'name_asc', label: 'Event Name (A–Z)' },
+    { value: 'name_desc', label: 'Event Name (Z–A)' },
+    { value: 'created_desc', label: 'Recently Created' },
+    { value: 'created_asc', label: 'Oldest Created' },
+];
+
+function formatDateTime(dateString) {
+    if (!dateString) return null;
+    return new Date(dateString).toLocaleString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+}
+
+export default function ReminderPage({ reminders = [] }) {
+    const [showingCreateModal, setShowingCreateModal] = useState(false);
+    const [viewingReminder, setViewingReminder] = useState(null);
+    const [editingReminder, setEditingReminder] = useState(null);
+    const [deletingReminder, setDeletingReminder] = useState(null);
     const [deleteProcessing, setDeleteProcessing] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
-    const [roleFilter, setRoleFilter] = useState('all');
-    const [showingAddStudentModal, setShowingAddStudentModal] = useState(false);
-    const [showingAddCommitteeModal, setShowingAddCommitteeModal] = useState(false);
-    const [showingExportFacilitatorsModal, setShowingExportFacilitatorsModal] = useState(false);
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [sortBy, setSortBy] = useState('remind_soonest');
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [users.length, searchTerm, roleFilter]);
+    }, [reminders.length, searchTerm, statusFilter, sortBy]);
 
-    const getRoleTags = (user) => {
-        const tags = [];
-        if (user.committee_details) tags.push('Committee');
-        if (user.student_details) tags.push('Student');
-        return tags;
-    };
-
-    const filteredUsers = useMemo(() => {
+    const filteredReminders = useMemo(() => {
         const normalizedSearch = searchTerm.trim().toLowerCase();
 
-        return [...users].filter((user) => {
+        const filtered = reminders.filter((reminder) => {
             const matchesSearch =
                 normalizedSearch.length === 0 ||
-                user.name.toLowerCase().includes(normalizedSearch) ||
-                user.email.toLowerCase().includes(normalizedSearch);
+                reminder.event_name?.toLowerCase().includes(normalizedSearch) ||
+                reminder.event_description?.toLowerCase().includes(normalizedSearch);
 
-            const tags = getRoleTags(user);
-            const matchesRole =
-                roleFilter === 'all' ||
-                (roleFilter === 'committee' && tags.includes('Committee')) ||
-                (roleFilter === 'student' && tags.includes('Student'));
+            const matchesStatus = statusFilter === 'all' || reminder.status === statusFilter;
 
-            return matchesSearch && matchesRole;
-        }).sort((a, b) => a.name.localeCompare(b.name));
-    }, [users, searchTerm, roleFilter]);
+            return matchesSearch && matchesStatus;
+        });
 
-    const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
-    const paginatedUsers = filteredUsers.slice(
+        return filtered.sort((a, b) => {
+            switch (sortBy) {
+                case 'remind_latest':
+                    return new Date(b.remind_at) - new Date(a.remind_at);
+                case 'name_asc':
+                    return a.event_name.localeCompare(b.event_name);
+                case 'name_desc':
+                    return b.event_name.localeCompare(a.event_name);
+                case 'created_desc':
+                    return new Date(b.created_at) - new Date(a.created_at);
+                case 'created_asc':
+                    return new Date(a.created_at) - new Date(b.created_at);
+                case 'remind_soonest':
+                default:
+                    return new Date(a.remind_at) - new Date(b.remind_at);
+            }
+        });
+    }, [reminders, searchTerm, statusFilter, sortBy]);
+
+    const totalPages = Math.max(1, Math.ceil(filteredReminders.length / PAGE_SIZE));
+    const paginatedReminders = filteredReminders.slice(
         (currentPage - 1) * PAGE_SIZE,
         currentPage * PAGE_SIZE,
     );
-    const startIndex = filteredUsers.length ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
-    const endIndex = Math.min(currentPage * PAGE_SIZE, filteredUsers.length);
+    const startIndex = filteredReminders.length ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
+    const endIndex = Math.min(currentPage * PAGE_SIZE, filteredReminders.length);
 
-    const handleDelete = (user) => setDeletingUser(user);
+    const handleDelete = (reminder) => {
+        setDeletingReminder(reminder);
+    };
 
     const confirmDelete = () => {
         setDeleteProcessing(true);
-        router.delete(route('user.destroy', deletingUser.id), {
-            onSuccess: () => setDeletingUser(null),
+        router.delete(route('reminder.destroy', deletingReminder.id), {
+            onSuccess: () => setDeletingReminder(null),
             onFinish: () => setDeleteProcessing(false),
         });
     };
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Members</h2>}
+            header={
+                <h2 className="text-xl font-semibold leading-tight text-gray-800">
+                    Reminders
+                </h2>
+            }
         >
-            <Head title="Members" />
+            <Head title="Reminders" />
 
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -82,60 +122,59 @@ export default function UserPage({ users = [] }) {
                         <div className="p-6 text-gray-900">
                             <div className="flex w-full items-center justify-between">
                                 <h1 className="text-xl font-semibold leading-tight text-gray-800">
-                                    Member List
+                                    Reminder List
                                 </h1>
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowingExportFacilitatorsModal(true)}
-                                        className="rounded border border-indigo-600 px-4 py-2 text-indigo-600 transition duration-150 ease-in-out hover:bg-indigo-50"
-                                    >
-                                        Export Potential Facilitators
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowingAddStudentModal(true)}
-                                        className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
-                                    >
-                                        + Add Student
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowingAddCommitteeModal(true)}
-                                        className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
-                                    >
-                                        + Add Committee
-                                    </button>
-                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowingCreateModal(true)}
+                                    className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
+                                >
+                                    + Add New Reminder
+                                </button>
                             </div>
 
                             <div className="mt-2 overflow-hidden bg-gray-100 p-4 shadow-sm sm:rounded-lg">
                                 <div className="flex flex-col gap-3 md:flex-row md:items-end">
                                     <div className="w-full md:max-w-md">
                                         <label className="mb-1 block text-sm font-medium text-gray-700">
-                                            Search by name or email
+                                            Search
                                         </label>
                                         <input
                                             type="text"
                                             value={searchTerm}
                                             onChange={(event) => setSearchTerm(event.target.value)}
-                                            placeholder="Search members"
+                                            placeholder="Search reminders"
                                             className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         />
                                     </div>
 
                                     <div className="w-full md:max-w-xs">
                                         <label className="mb-1 block text-sm font-medium text-gray-700">
-                                            Filter by role
+                                            Filter by status
                                         </label>
                                         <select
-                                            value={roleFilter}
-                                            onChange={(event) => setRoleFilter(event.target.value)}
+                                            value={statusFilter}
+                                            onChange={(event) => setStatusFilter(event.target.value)}
                                             className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                         >
-                                            <option value="all">All roles</option>
-                                            <option value="committee">Committee</option>
-                                            <option value="student">Student</option>
+                                            <option value="all">All statuses</option>
+                                            <option value="upcoming">Upcoming</option>
+                                            <option value="passed">Passed</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="w-full md:max-w-xs">
+                                        <label className="mb-1 block text-sm font-medium text-gray-700">
+                                            Sort by
+                                        </label>
+                                        <select
+                                            value={sortBy}
+                                            onChange={(event) => setSortBy(event.target.value)}
+                                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                        >
+                                            {sortOptions.map((option) => (
+                                                <option key={option.value} value={option.value}>{option.label}</option>
+                                            ))}
                                         </select>
                                     </div>
                                 </div>
@@ -143,7 +182,7 @@ export default function UserPage({ users = [] }) {
 
                             <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
                                 <span>
-                                    Showing {filteredUsers.length ? startIndex : 0} - {endIndex} of {filteredUsers.length}
+                                    Showing {filteredReminders.length ? startIndex : 0} - {endIndex} of {filteredReminders.length}
                                 </span>
                                 <span>
                                     Page {currentPage} of {totalPages}
@@ -153,54 +192,31 @@ export default function UserPage({ users = [] }) {
                             <table className="mt-3 w-full text-left">
                                 <thead className="border-b border-default bg-gray-100 text-sm text-body">
                                     <tr>
-                                        <th className="p-2">Name</th>
-                                        <th>Role</th>
-                                        <th>Phone Number</th>
-                                        <th>Email</th>
+                                        <th className="p-2">Event Title</th>
+                                        <th>Status</th>
+                                        <th>Event Date &amp; Time</th>
+                                        <th>Reminder Date &amp; Time</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {paginatedUsers.length > 0 ? (
-                                        paginatedUsers.map((user) => (
-                                            <tr className="border-b" key={user.id}>
-                                                <td className="p-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <img
-                                                            src={user.profile_picture || placeholder_avatar}
-                                                            alt={user.name}
-                                                            className="h-9 w-9 rounded-full object-cover"
-                                                        />
-                                                        <span>{user.name}</span>
-                                                    </div>
-                                                </td>
+                                    {paginatedReminders.length > 0 ? (
+                                        paginatedReminders.map((reminder) => (
+                                            <tr className="border-b" key={reminder.id}>
+                                                <td className="p-3">{reminder.event_name}</td>
                                                 <td>
-                                                    <div className="flex flex-wrap gap-1">
-                                                        {getRoleTags(user).map((tag) => (
-                                                            <span
-                                                                key={tag}
-                                                                className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                                                                    tag === 'Committee'
-                                                                        ? 'bg-purple-100 text-purple-800'
-                                                                        : 'bg-blue-100 text-blue-800'
-                                                                }`}
-                                                            >
-                                                                {tag}
-                                                            </span>
-                                                        ))}
-                                                        {getRoleTags(user).length === 0 && (
-                                                            <span className="text-xs text-gray-400">—</span>
-                                                        )}
-                                                    </div>
+                                                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusColors[reminder.status]}`}>
+                                                        {statusLabels[reminder.status] ?? reminder.status}
+                                                    </span>
                                                 </td>
-                                                <td>{user.phone_number ?? '—'}</td>
-                                                <td>{user.email}</td>
+                                                <td>{formatDateTime(reminder.event_at) ?? 'TBA'}</td>
+                                                <td>{formatDateTime(reminder.remind_at)}</td>
                                                 <td>
                                                     <div className="flex items-center gap-1">
                                                         <button
                                                             type="button"
-                                                            onClick={() => setSelectedUser(user)}
-                                                            aria-label="View member"
+                                                            onClick={() => setViewingReminder(reminder)}
+                                                            aria-label="View reminder"
                                                             title="View"
                                                             className="rounded p-2 text-gray-600 transition hover:bg-gray-100 hover:text-indigo-600"
                                                         >
@@ -211,9 +227,10 @@ export default function UserPage({ users = [] }) {
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            disabled
-                                                            title="Edit — coming soon"
-                                                            className="rounded p-2 text-gray-300"
+                                                            onClick={() => setEditingReminder(reminder)}
+                                                            aria-label="Edit reminder"
+                                                            title="Edit"
+                                                            className="rounded p-2 text-gray-600 transition hover:bg-gray-100 hover:text-indigo-600"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="h-5 w-5">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13l-3.43.978.978-3.43a4.5 4.5 0 011.13-1.897L16.862 4.487z" />
@@ -222,9 +239,9 @@ export default function UserPage({ users = [] }) {
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            onClick={() => handleDelete(user)}
-                                                            aria-label="Archive member"
-                                                            title="Archive"
+                                                            onClick={() => handleDelete(reminder)}
+                                                            aria-label="Delete reminder"
+                                                            title="Delete"
                                                             className="rounded p-2 text-gray-600 transition hover:bg-gray-100 hover:text-red-600"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -242,7 +259,7 @@ export default function UserPage({ users = [] }) {
                                     ) : (
                                         <tr>
                                             <td className="p-4 text-sm text-gray-500" colSpan="5">
-                                                No members found.
+                                                No reminders found.
                                             </td>
                                         </tr>
                                     )}
@@ -258,6 +275,7 @@ export default function UserPage({ users = [] }) {
                                 >
                                     Previous
                                 </button>
+
                                 <div className="flex items-center gap-2 text-sm text-gray-500">
                                     {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
                                         <button
@@ -274,6 +292,7 @@ export default function UserPage({ users = [] }) {
                                         </button>
                                     ))}
                                 </div>
+
                                 <button
                                     type="button"
                                     onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
@@ -288,36 +307,31 @@ export default function UserPage({ users = [] }) {
                 </div>
             </div>
 
-            <ViewUserModal
-                userId={selectedUser?.id}
-                show={Boolean(selectedUser)}
-                onClose={() => setSelectedUser(null)}
+            <CreateReminderModal
+                show={showingCreateModal}
+                onClose={() => setShowingCreateModal(false)}
+            />
+
+            <ViewReminderModal
+                show={Boolean(viewingReminder)}
+                reminder={viewingReminder}
+                onClose={() => setViewingReminder(null)}
+            />
+
+            <UpdateReminderModal
+                show={Boolean(editingReminder)}
+                reminder={editingReminder}
+                onClose={() => setEditingReminder(null)}
             />
 
             <ConfirmDeleteModal
-                show={Boolean(deletingUser)}
-                onClose={() => setDeletingUser(null)}
+                show={Boolean(deletingReminder)}
+                onClose={() => setDeletingReminder(null)}
                 onConfirm={confirmDelete}
-                title="Archive member"
-                itemName={deletingUser?.name}
+                title="Delete reminder"
+                itemName={deletingReminder?.event_name}
                 processing={deleteProcessing}
             />
-
-            <AddStudentModal
-                show={showingAddStudentModal}
-                onClose={() => setShowingAddStudentModal(false)}
-            />
-
-            <AddCommitteeModal
-                show={showingAddCommitteeModal}
-                onClose={() => setShowingAddCommitteeModal(false)}
-            />
-
-            <ExportPotentialFacilitatorsModal
-                show={showingExportFacilitatorsModal}
-                onClose={() => setShowingExportFacilitatorsModal(false)}
-            />
-
         </AuthenticatedLayout>
     );
 }

@@ -4,6 +4,7 @@ import Modal from '@/Components/Modal';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
+import PrerequisiteChecklist from './PrerequisiteChecklist';
 import { useForm } from '@inertiajs/react';
 
 export default function CreateCourseProfileModal({
@@ -151,47 +152,12 @@ export default function CreateCourseProfileModal({
 
                     <div className="hidden border-l border-gray-200" aria-hidden="true" />
 
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                        <div className="mb-3">
-                            <InputLabel value="Pre-requisites" />
-                        </div>
-
-                        <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
-                            {availablePrerequisiteOptions.length > 0 ? (
-                                availablePrerequisiteOptions.map((courseProfile) => {
-                                    const isSelected = data.prerequisite_course_profile_ids.includes(
-                                        Number(courseProfile.id),
-                                    );
-
-                                    return (
-                                        <label
-                                            key={courseProfile.id}
-                                            className={`flex cursor-pointer items-center gap-3 rounded-xl border p-2 transition ${
-                                                isSelected
-                                                    ? 'border-indigo-200 bg-indigo-100 text-indigo-900'
-                                                    : 'border-gray-200 bg-white text-gray-700 hover:border-indigo-200 hover:bg-indigo-50'
-                                            }`}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={isSelected}
-                                                onChange={() => togglePrerequisite(courseProfile.id)}
-                                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                                            />
-                                            <span className="text-sm font-medium">{courseProfile.title}</span>
-                                        </label>
-                                    );
-                                })
-                            ) : (
-                                <p className="text-sm text-gray-500">No course profiles available yet.</p>
-                            )}
-                        </div>
-
-                        <InputError
-                            message={errors.prerequisite_course_profile_ids}
-                            className="mt-3"
-                        />
-                    </div>
+                    <PrerequisiteChecklist
+                        options={availablePrerequisiteOptions}
+                        selectedIds={data.prerequisite_course_profile_ids}
+                        onToggle={togglePrerequisite}
+                        error={errors.prerequisite_course_profile_ids}
+                    />
                 </div>
 
                 <div className="mt-6 flex justify-end gap-3">

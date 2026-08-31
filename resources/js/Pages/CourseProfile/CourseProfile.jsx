@@ -15,7 +15,8 @@ const PAGE_SIZE = 8;
 export default function CourseProfile({ courseProfiles, prerequisiteOptions, classes }) {
     const [showingCreateModal, setShowingCreateModal] = useState(false);
     const [showingClassesModal, setShowingClassesModal] = useState(false);
-    const [selectedCourseProfile, setSelectedCourseProfile] = useState(null);
+    const [classesCourseProfile, setClassesCourseProfile] = useState(null);
+    const [viewingCourseProfile, setViewingCourseProfile] = useState(null);
     const [editingCourseProfile, setEditingCourseProfile] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
@@ -161,27 +162,27 @@ export default function CourseProfile({ courseProfiles, prerequisiteOptions, cla
                                                         <SecondaryButton
                                                             type="button"
                                                             onClick={() => {
-                                                                setSelectedCourseProfile(courseProfile);
+                                                                setClassesCourseProfile(courseProfile);
                                                                 setShowingClassesModal(true);
                                                             }}
                                                             className="rounded border border-indigo-600 px-3 py-1 text-sm text-indigo-600 hover:bg-indigo-50"
                                                         >
                                                             Check Classes
                                                         </SecondaryButton>
-                                                        <button
+                                                        <SecondaryButton
                                                             type="button"
                                                             onClick={() => setManagingFacilitatorsFor(courseProfile)}
                                                             className="rounded border border-indigo-600 px-3 py-1 text-sm text-indigo-600 hover:bg-indigo-50"
                                                         >
                                                             Facilitators
-                                                        </button>
+                                                        </SecondaryButton>
                                                     </div>
                                                 </td>
                                                 <td>
                                                     <div className="flex items-center gap-1">
                                                         <button
                                                             type="button"
-                                                            onClick={() => setSelectedCourseProfile(courseProfile)}
+                                                            onClick={() => setViewingCourseProfile(courseProfile)}
                                                             aria-label="View course profile"
                                                             title="View"
                                                             className="rounded p-2 text-gray-600 transition hover:bg-gray-100 hover:text-indigo-600"
@@ -319,16 +320,14 @@ export default function CourseProfile({ courseProfiles, prerequisiteOptions, cla
             <AvailableClassesModal
                 show={showingClassesModal}
                 onClose={() => setShowingClassesModal(false)}
-                courseProfile={selectedCourseProfile}
+                courseProfile={classesCourseProfile}
                 classes={classes}
             />
 
             <ViewCourseProfileModal
-                courseProfile={selectedCourseProfile}
-                onClose={() => {
-                    setSelectedCourseProfile(null);
-                    setShowingClassesModal(false);
-                }}
+                courseProfile={viewingCourseProfile}
+                classes={classes}
+                onClose={() => setViewingCourseProfile(null)}
             />
 
             <ConfirmDeleteModal

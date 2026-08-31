@@ -1,6 +1,7 @@
 import React from 'react';
 import Modal from '@/Components/Modal';
 import InputLabel from '@/Components/InputLabel';
+import SecondaryButton from '@/Components/SecondaryButton';
 
 export default function ViewRegistrationModal({ registration, open, onClose }) {
     if (!registration) return null;
@@ -119,12 +120,7 @@ export default function ViewRegistrationModal({ registration, open, onClose }) {
 
                 {/* Close Button */}
                 <div className="mt-6 flex justify-end">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                    >
-                        Close
-                    </button>
+                    <SecondaryButton type="button" onClick={onClose}>Close</SecondaryButton>
                 </div>
             </div>
         </Modal>

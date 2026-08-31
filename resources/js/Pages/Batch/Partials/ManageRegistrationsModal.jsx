@@ -3,8 +3,9 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import PrimaryButton from '@/Components/PrimaryButton';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
+import HoverTooltip from '@/Components/HoverTooltip';
 import axios from 'axios';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 
 const statusColors = {
     pending: 'bg-yellow-100 text-yellow-800',
@@ -39,6 +40,7 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
     const [statusFilter, setStatusFilter] = useState('all');
     const [excelUploading, setExcelUploading] = useState(false);
     const [excelResult, setExcelResult] = useState(null);
+    const excelInputRef = useRef(null);
 
     const statusLabels = {
         rejected: 'Rejected',
@@ -181,7 +183,7 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
         (selectedClass.enrollments_count + selectedIds.length) > suggestedCapacity;
 
     return (
-        <Modal show={show} onClose={onClose} maxWidth="6xl">
+        <Modal show={show} onClose={onClose} maxWidth="7xl">
             <div className="max-h-[85vh] overflow-y-auto p-6">
                 <div className="flex items-start justify-between gap-4">
                     <div>
@@ -216,20 +218,22 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                                 + Add Manually
                             </SecondaryButton>
 
-                            <label className={`cursor-pointer rounded border px-3 py-2 text-sm ${
-                                excelUploading
-                                    ? 'border-gray-300 text-gray-400'
-                                    : 'border-indigo-600 text-indigo-600 hover:bg-indigo-50'
-                            }`}>
+                            <SecondaryButton
+                                type="button"
+                                onClick={() => excelInputRef.current?.click()}
+                                disabled={excelUploading}
+                                className="rounded border border-indigo-600 px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50"
+                            >
                                 {excelUploading ? 'Uploading...' : 'Upload Excel'}
-                                <input
-                                    type="file"
-                                    accept=".xlsx,.xls"
-                                    className="hidden"
-                                    onChange={handleExcelUpload}
-                                    disabled={excelUploading}
-                                />
-                            </label>
+                            </SecondaryButton>
+                            <input
+                                type="file"
+                                ref={excelInputRef}
+                                accept=".xlsx,.xls"
+                                className="hidden"
+                                onChange={handleExcelUpload}
+                                disabled={excelUploading}
+                            />
                         </div>
 
                         {excelResult && (
@@ -389,7 +393,7 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                                                     </td>
                                                     <td className="p-2">
                                                         {answers.remarks ? (
-                                                            <div className="group relative inline-block">
+                                                            <HoverTooltip content={answers.remarks}>
                                                                 <button
                                                                     type="button"
                                                                     aria-label="View remarks"
@@ -400,10 +404,7 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                                                                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                                     </svg>
                                                                 </button>
-                                                                <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-1 hidden w-64 -translate-x-1/2 rounded-md bg-gray-900 p-2 text-xs text-white group-hover:block">
-                                                                    {answers.remarks}
-                                                                </div>
-                                                            </div>
+                                                            </HoverTooltip>
                                                         ) : (
                                                             <span>—</span>
                                                         )}
@@ -446,44 +447,54 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                             </button>
                         </div>
 
-                        {/* Bulk action bar — assign on the left, reject on the right */}
-                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-gray-200 bg-gray-50 p-4">
-                            <div className="flex flex-wrap items-center gap-3">
-                                <span className="text-sm text-gray-600">
-                                    {selectedIds.length} selected
-                                </span>
-                                <select
-                                    value={selectedClassId}
-                                    onChange={(e) => setSelectedClassId(e.target.value)}
-                                    className="rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                >
-                                    <option value="">Select an open class...</option>
-                                    {eligibleClasses.map((cls) => (
-                                        <option key={cls.id} value={cls.id}>{cls.name}</option>
-                                    ))}
-                                </select>
-                                <PrimaryButton
-                                    type="button"
-                                    disabled={selectedIds.length === 0 || !selectedClassId || assigning}
-                                    onClick={handleAssign}
-                                >
-                                    {assigning ? 'Assigning...' : 'Assign to Class'}
-                                </PrimaryButton>
-                                {eligibleClasses.length === 0 && (
-                                    <div className="text-xs text-gray-500">
-                                        <p>No open classes found for this course profile.</p>
-                                    </div>
-                                )}
-                            </div>
+                        {/* Bulk action bar */}
+                        <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                <div className="flex items-center gap-3">
+                                    <span className="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-700">
+                                        {selectedIds.length} selected
+                                    </span>
+                                    {eligibleClasses.length === 0 && (
+                                        <span className="text-xs text-gray-500">
+                                            No open classes found for this course profile.
+                                        </span>
+                                    )}
+                                </div>
 
-                            <SecondaryButton
-                                type="button"
-                                onClick={handleBulkReject}
-                                disabled={selectedIds.length === 0 || rejecting}
-                                className="rounded border border-red-600 px-4 py-2 text-sm text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {rejecting ? 'Rejecting...' : 'Reject'}
-                            </SecondaryButton>
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                    <div className="flex rounded-md shadow-sm">
+                                        <select
+                                            value={selectedClassId}
+                                            onChange={(e) => setSelectedClassId(e.target.value)}
+                                            className="w-full rounded-l-md rounded-r-none border-gray-300 border-r-0 text-sm focus:z-10 focus:border-indigo-500 focus:ring-indigo-500 sm:w-56"
+                                        >
+                                            <option value="">Select an open class...</option>
+                                            {eligibleClasses.map((cls) => (
+                                                <option key={cls.id} value={cls.id}>{cls.name}</option>
+                                            ))}
+                                        </select>
+                                        <PrimaryButton
+                                            type="button"
+                                            disabled={selectedIds.length === 0 || !selectedClassId || assigning}
+                                            onClick={handleAssign}
+                                            className="rounded-l-none border-transparent bg-indigo-600 hover:bg-indigo-500 focus:bg-indigo-500 active:bg-indigo-700"
+                                        >
+                                            {assigning ? 'Assigning...' : 'Assign to Class'}
+                                        </PrimaryButton>
+                                    </div>
+
+                                    <div className="hidden h-8 w-px bg-gray-200 sm:block" />
+
+                                    <SecondaryButton
+                                        type="button"
+                                        onClick={handleBulkReject}
+                                        disabled={selectedIds.length === 0 || rejecting}
+                                        className="rounded border border-red-600 px-4 py-2 text-sm text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        {rejecting ? 'Rejecting...' : 'Reject'}
+                                    </SecondaryButton>
+                                </div>
+                            </div>
                         </div>
                     </>
                 )}

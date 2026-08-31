@@ -25,7 +25,7 @@ class CourseProfileController extends Controller
                 ->orderBy('title')
                 ->get(['id', 'title']),
             'classes' => \App\Models\Classes::query()
-                ->with(['courseProfile:id,title', 'facilitator:id,name'])
+                ->with(['courseProfile:id,title', 'facilitators:id,name'])
                 ->latest()
                 ->get(),
         ]);
