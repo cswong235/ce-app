@@ -266,6 +266,9 @@ export default function UpdateReminderModal({ show, onClose, reminder }) {
                                 Browser / Desktop Notification
                             </label>
                         </div>
+                        <p className="mt-3 text-xs text-gray-500">
+                            <span className="font-semibold text-gray-600">Note:</span> for browser/desktop notifications to work, allow notifications when your browser prompts for permission, and keep the CE App open in a browser tab — it can be in the background or a different tab, it just can't be closed.
+                        </p>
                         <InputError message={errors.notification_methods} className="mt-2" />
                     </section>
                 </div>

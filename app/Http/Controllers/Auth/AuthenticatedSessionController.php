@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\CommitteeInvite;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,16 +34,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        $invite = \App\Models\CommitteeInvite::where('email', $request->user()->email)
-            ->where('status', 'pending')
-            ->first();
-
-        if ($invite) {
-            $invite->update([
-                'status' => 'accepted',
-                'accepted_at' => now(),
-            ]);
-        }
+        CommitteeInvite::markAcceptedFor($request->user()->email);
 
         return redirect()->intended(route('dashboard', absolute: false));
     }

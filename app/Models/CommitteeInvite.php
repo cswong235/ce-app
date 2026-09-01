@@ -14,4 +14,12 @@ class CommitteeInvite extends Model
         'invited_at' => 'datetime',
         'accepted_at' => 'datetime',
     ];
+
+    public static function markAcceptedFor(string $email): void
+    {
+        static::where('email', $email)->where('status', 'pending')->update([
+            'status' => 'accepted',
+            'accepted_at' => now(),
+        ]);
+    }
 }

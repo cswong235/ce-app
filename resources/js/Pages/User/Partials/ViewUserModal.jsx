@@ -145,6 +145,8 @@ export default function ViewUserModal({ userId, show, onClose }) {
     const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState('all');
     const [facilitatorSearchTerm, setFacilitatorSearchTerm] = useState('');
     const [facilitatorStatusFilter, setFacilitatorStatusFilter] = useState('all');
+    const [revealedPassword, setRevealedPassword] = useState(null);
+    const [revealingPassword, setRevealingPassword] = useState(false);
 
     useEffect(() => {
         if (show && userId) {
@@ -159,9 +161,17 @@ export default function ViewUserModal({ userId, show, onClose }) {
                 setEnrollmentStatusFilter('all');
                 setFacilitatorSearchTerm('');
                 setFacilitatorStatusFilter('all');
+                setRevealedPassword(null);
             }).finally(() => setLoading(false));
         }
     }, [show, userId]);
+
+    const revealPassword = () => {
+        setRevealingPassword(true);
+        axios.get(route('committee_invite.reveal_password', user.committee.invite_id))
+            .then((res) => setRevealedPassword(res.data.temp_password))
+            .finally(() => setRevealingPassword(false));
+    };
 
     const refetchUser = () => {
         axios.get(route('user.show', userId)).then((res) => setUser(res.data));
@@ -308,6 +318,27 @@ export default function ViewUserModal({ userId, show, onClose }) {
                                                 {formatDate(user.committee.term_start_date)} – {formatDate(user.committee.term_end_date)}
                                             </dd>
                                         </div>
+                                        {user.committee.invite_id && (
+                                            <div>
+                                                <dt className="text-sm font-medium text-gray-500">Temporary Password</dt>
+                                                <dd className="mt-1">
+                                                    {revealedPassword ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <code className="rounded bg-gray-100 px-2 py-1 text-sm text-gray-900">{revealedPassword}</code>
+                                                            <SecondaryButton type="button" onClick={() => setRevealedPassword(null)}
+                                                                className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-600 hover:bg-gray-50">
+                                                                Hide
+                                                            </SecondaryButton>
+                                                        </div>
+                                                    ) : (
+                                                        <SecondaryButton type="button" onClick={revealPassword} disabled={revealingPassword}
+                                                            className="rounded border border-indigo-600 px-2 py-1 text-xs text-indigo-600 hover:bg-indigo-50">
+                                                            {revealingPassword ? 'Loading...' : 'Reveal Password'}
+                                                        </SecondaryButton>
+                                                    )}
+                                                </dd>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <SubTable

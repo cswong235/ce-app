@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\ClassAdmin;
 use App\Models\ClassEnrollment;
+use App\Models\CommitteeInvite;
 use App\Models\FacilitatorStatus;
 use App\Models\User;
 use App\Support\PhoneNumberSanitizer;
@@ -64,6 +65,8 @@ class UserController extends Controller
         }
 
         if ($user->committeeDetails) {
+            $invite = CommitteeInvite::where('email', $user->email)->first(['id', 'status']);
+
             $data['committee'] = [
                 'role' => $user->committeeDetails->role,
                 'term_start_date' => $user->committeeDetails->term_start_date,
@@ -72,6 +75,8 @@ class UserController extends Controller
                     ->where('committee_id', $user->id)
                     ->with('classes:id,name')
                     ->get(),
+                'invite_id' => $invite?->id,
+                'invite_status' => $invite?->status,
             ];
         }
 

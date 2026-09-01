@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useEffect, useRef } from 'react';
 
 const SHOWN_KEY = 'shown_reminder_toasts';
-const DUE_CHECK_ATTEMPTS = 4;
+const DUE_CHECK_ATTEMPTS = 6;
 const DUE_CHECK_INTERVAL_MS = 20000;
 
 function getShownIds() {
@@ -22,6 +22,7 @@ function markShown(id) {
 export default function ReminderToastWatcher() {
     const timeoutRef = useRef(null);
     const checkCountRef = useRef(0);
+    const burstActiveRef = useRef(false);
 
     useEffect(() => {
         if (typeof Notification === 'undefined') return;
@@ -51,6 +52,7 @@ export default function ReminderToastWatcher() {
         const scheduleNextCheck = () => {
             axios.get(route('reminder.next_due')).then((res) => {
                 if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                burstActiveRef.current = false;
 
                 if (!res.data.remind_at) return;
 
@@ -58,6 +60,7 @@ export default function ReminderToastWatcher() {
                 checkCountRef.current = 0;
 
                 timeoutRef.current = setTimeout(function attempt() {
+                    burstActiveRef.current = true;
                     checkForDueReminders();
                     checkCountRef.current += 1;
 
@@ -72,8 +75,17 @@ export default function ReminderToastWatcher() {
 
         scheduleNextCheck();
 
+        // Tab regaining focus never cancels an in-progress due-reminder retry burst — it used to
+        // call scheduleNextCheck() unconditionally, which clearTimeout()'d the pending retry and
+        // rebuilt the schedule from "next upcoming reminder" (finding nothing, since the reminder
+        // had usually already flipped to passed by then), silently dropping the toast. An ordinary
+        // alt-tab while waiting for a reminder to fire was enough to trigger this.
         const onVisibilityChange = () => {
-            if (document.visibilityState === 'visible') scheduleNextCheck();
+            if (document.visibilityState !== 'visible') return;
+
+            checkForDueReminders();
+
+            if (!burstActiveRef.current) scheduleNextCheck();
         };
         document.addEventListener('visibilitychange', onVisibilityChange);
 
