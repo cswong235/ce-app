@@ -56,4 +56,27 @@ class Classes extends Model
     {
         return $this->hasMany(ClassEnrollment::class, 'class_id');
     }
+
+    // Advances 'open' classes to 'in_progress' once their start date arrives, and
+    // 'in_progress' classes to 'completed' once their end date (or start date, for
+    // single-day classes) has passed. 'planning' and 'cancelled' are never touched.
+    public static function syncAutoStatuses(): void
+    {
+        $today = now()->toDateString();
+        $time = now()->format('H:i:s');
+
+        static::where('status', 'open')
+            ->whereDate('start_date', '<=', $today)
+            ->update(['status' => 'in_progress']);
+
+        static::where('status', 'in_progress')
+            ->where(function ($query) use ($today, $time) {
+                $query->whereRaw('COALESCE(end_date, start_date) < ?', [$today])
+                    ->orWhereRaw(
+                        'COALESCE(end_date, start_date) = ? AND end_time IS NOT NULL AND end_time <= ?',
+                        [$today, $time]
+                    );
+            })
+            ->update(['status' => 'completed']);
+    }
 }

@@ -35,10 +35,21 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
     const [deletingClass, setDeletingClass] = useState(null);
     const [deleteProcessing, setDeleteProcessing] = useState(false);
     const [courseProfileFilter, setCourseProfileFilter] = useState('all');
+    const [isSyncing, setIsSyncing] = useState(false);
 
     useEffect(() => {
         setCurrentPage(1);
     }, [classes.length, searchTerm, statusFilter, courseProfileFilter]);
+
+    useEffect(() => {
+        const removeStart = router.on('start', () => setIsSyncing(true));
+        const removeFinish = router.on('finish', () => setIsSyncing(false));
+
+        return () => {
+            removeStart();
+            removeFinish();
+        };
+    }, []);
 
     const filteredClasses = useMemo(() => {
         const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -181,7 +192,15 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {paginatedClasses.length > 0 ? (
+                                    {isSyncing ? (
+                                        Array.from({ length: 5 }).map((_, index) => (
+                                            <tr className="border-b" key={`skeleton-${index}`}>
+                                                <td className="p-3" colSpan={7}>
+                                                    <div className="h-4 w-full animate-pulse rounded bg-gray-200" />
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : paginatedClasses.length > 0 ? (
                                         paginatedClasses.map((classItem) => (
                                             <tr className="border-b" key={classItem.id}>
                                                 <td className="p-3">{classItem.name}</td>

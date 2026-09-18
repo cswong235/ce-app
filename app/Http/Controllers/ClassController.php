@@ -21,6 +21,8 @@ class ClassController extends Controller
 {
     public function index(): Response
     {
+        Classes::syncAutoStatuses();
+
         return Inertia::render('Class/Class', [
             'classes' => Classes::query()
                 ->with(['courseProfile:id,title', 'facilitators:id,name'])
@@ -36,6 +38,9 @@ class ClassController extends Controller
 
     public function show(Classes $class): JsonResponse
     {
+        Classes::syncAutoStatuses();
+        $class->refresh();
+
         return response()->json([
             'class' => $class->load(['courseProfile:id,title', 'facilitators:id,name', 'classAdmin.committee:id,name']),
             'graduationItems' => GraduationItem::where('class_id', $class->id)->get(),
