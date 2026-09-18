@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\ClassRegistration;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -34,6 +35,9 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'pendingRegistrationsCount' => $request->user()
+                ? ClassRegistration::where('status', 'pending')->count()
+                : 0,
         ];
     }
 }

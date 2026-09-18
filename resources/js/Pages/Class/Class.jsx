@@ -17,6 +17,14 @@ const statusLabels = {
     cancelled: 'Cancelled',
 };
 
+const statusColors = {
+    planning: 'bg-gray-100 text-gray-600',
+    open: 'bg-blue-100 text-blue-700',
+    in_progress: 'bg-indigo-100 text-indigo-700',
+    completed: 'bg-green-100 text-green-800',
+    cancelled: 'bg-red-100 text-red-800',
+};
+
 export default function ClassPage({ classes = [], courseProfileOptions = [], facilitatorOptions = [] }) {
     const [showingCreateModal, setShowingCreateModal] = useState(false);
     const [selectedClass, setSelectedClass] = useState(null);
@@ -90,12 +98,6 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                                     Class List
                                 </h1>
                                 <div className="flex gap-2">
-                                    <a
-                                        href={route('batch')}
-                                        className="rounded border border-indigo-600 px-4 py-2 text-indigo-600 transition duration-150 ease-in-out hover:bg-indigo-50"
-                                    >
-                                        Manage Registrations
-                                    </a>
                                     <button
                                         type="button"
                                         onClick={() => setShowingCreateModal(true)}
@@ -185,7 +187,7 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                                                 <td className="p-3">{classItem.name}</td>
                                                 <td>{classItem.course_profile?.title ?? 'N/A'}</td>
                                                 <td>
-                                                    <span className="inline-flex rounded-full bg-indigo-100 px-2 py-1 text-xs font-medium text-indigo-700">
+                                                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusColors[classItem.status] ?? 'bg-gray-100 text-gray-600'}`}>
                                                         {statusLabels[classItem.status] ?? classItem.status}
                                                     </span>
                                                 </td>

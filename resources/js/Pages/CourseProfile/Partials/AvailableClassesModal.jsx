@@ -3,6 +3,22 @@ import { useEffect, useMemo, useState } from 'react';
 
 const PAGE_SIZE = 8;
 
+const statusLabels = {
+    planning: 'Planning',
+    open: 'Open',
+    in_progress: 'In Progress',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
+};
+
+const statusColors = {
+    planning: 'bg-gray-100 text-gray-600',
+    open: 'bg-blue-100 text-blue-700',
+    in_progress: 'bg-indigo-100 text-indigo-700',
+    completed: 'bg-green-100 text-green-800',
+    cancelled: 'bg-red-100 text-red-800',
+};
+
 function formatDate(dateString) {
     if (!dateString) return null;
     return new Date(dateString).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -80,12 +96,8 @@ export default function AvailableClassesModal({ show, onClose, courseProfile, cl
                                     <tr key={cls.id} className="border-b hover:bg-gray-50">
                                         <td className="px-4 py-3 font-medium text-gray-900">{cls.name}</td>
                                         <td className="px-4 py-3 text-gray-600">
-                                            <span className="inline-block rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">
-                                                {cls.status === 'planning' && 'Planning'}
-                                                {cls.status === 'open' && 'Open'}
-                                                {cls.status === 'in_progress' && 'In Progress'}
-                                                {cls.status === 'completed' && 'Completed'}
-                                                {cls.status === 'cancelled' && 'Cancelled'}
+                                            <span className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${statusColors[cls.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                                                {statusLabels[cls.status] ?? cls.status}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-gray-600">

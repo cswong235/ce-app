@@ -6,6 +6,7 @@ import {
     CourseProfileIcon,
     DashboardIcon,
     MemberListIcon,
+    RegistrationIcon,
     ReminderIcon,
     UserCircleIcon,
 } from '@/Components/NavIcons';
@@ -17,12 +18,15 @@ const navigation = [
     { name: 'Dashboard', route: 'dashboard', icon: DashboardIcon },
     { name: 'Course Profiles', route: 'course_profile', icon: CourseProfileIcon },
     { name: 'Classes', route: 'class', icon: ClassIcon },
+    { name: 'Registrations', route: 'batch', icon: RegistrationIcon },
     { name: 'Reminders', route: 'reminder', icon: ReminderIcon },
     { name: 'Member List', route: 'user', icon: MemberListIcon },
 ];
 
 export default function AuthenticatedLayout({ header, children }) {
-    const user = usePage().props.auth.user;
+    const { auth, pendingRegistrationsCount } = usePage().props;
+    const user = auth.user;
+    const hasPendingRegistrations = pendingRegistrationsCount > 0;
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] =
         useState(false);
@@ -47,16 +51,22 @@ export default function AuthenticatedLayout({ header, children }) {
                 </div>
 
                 <nav className="flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-2 py-4">
-                    {navigation.map((item) => (
-                        <SidebarNavLink
-                            key={item.name}
-                            href={route(item.route)}
-                            active={route().current(item.route)}
-                            icon={item.icon}
-                        >
-                            {item.name}
-                        </SidebarNavLink>
-                    ))}
+                    {navigation.map((item) => {
+                        const isRegistrations = item.route === 'batch';
+
+                        return (
+                            <SidebarNavLink
+                                key={item.name}
+                                href={route(item.route)}
+                                active={route().current(item.route)}
+                                icon={item.icon}
+                                highlight={isRegistrations && hasPendingRegistrations}
+                                badge={isRegistrations && hasPendingRegistrations}
+                            >
+                                {item.name}
+                            </SidebarNavLink>
+                        );
+                    })}
                 </nav>
 
                 <div className="relative shrink-0 border-t border-gray-100 p-2">
@@ -174,6 +184,14 @@ export default function AuthenticatedLayout({ header, children }) {
                             active={route().current('class')}
                         >
                             Classes
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('batch')}
+                            active={route().current('batch')}
+                            highlight={hasPendingRegistrations}
+                            badge={hasPendingRegistrations}
+                        >
+                            Registrations
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
                             href={route('reminder')}

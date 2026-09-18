@@ -13,7 +13,6 @@ export default function CreateClassModal({ show, onClose, courseProfileOptions, 
         facilitator_ids: [],
         name: '',
         description: '',
-        status: 'planning',
         language: '',
         mode: 'online',
         venue: '',
@@ -148,23 +147,6 @@ export default function CreateClassModal({ show, onClose, courseProfileOptions, 
                     <section className="rounded-lg border border-gray-200 bg-white p-5">
                         <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Organization</h3>
                         <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <InputLabel htmlFor="class-status" value="Status" />
-                                <select
-                                    id="class-status"
-                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    value={data.status}
-                                    onChange={(event) => setData('status', event.target.value)}
-                                >
-                                    <option value="planning">Planning</option>
-                                    <option value="open">Open</option>
-                                    <option value="in_progress">In Progress</option>
-                                    <option value="completed">Completed</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
-                                <InputError message={errors.status} className="mt-2" />
-                            </div>
-
                             <div>
                                 <InputLabel value="Facilitators" />
                                 {!data.course_profile_id ? (

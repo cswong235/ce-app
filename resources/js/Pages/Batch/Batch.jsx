@@ -62,9 +62,9 @@ export default function BatchPage({ batches = [], courseProfileOptions = [] }) {
 
     return (
         <AuthenticatedLayout
-            header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Batches</h2>}
+            header={<h2 className="text-xl font-semibold leading-tight text-gray-800">Registration Batches</h2>}
         >
-            <Head title="Batches" />
+            <Head title="Registration Batches" />
 
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -72,7 +72,7 @@ export default function BatchPage({ batches = [], courseProfileOptions = [] }) {
                         <div className="p-6 text-gray-900">
                             <div className="flex w-full items-center justify-between">
                                 <h1 className="text-xl font-semibold leading-tight text-gray-800">
-                                    Batch List
+                                    Registration Batch List
                                 </h1>
                                 <button
                                     type="button"

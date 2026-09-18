@@ -7,6 +7,10 @@ import TextInput from '@/Components/TextInput';
 import { useForm } from '@inertiajs/react';
 import { useEffect } from 'react';
 
+function toTimeInputValue(value) {
+    return value ? value.slice(0, 5) : '';
+}
+
 export default function UpdateClassModal({ show, onClose, classItem, courseProfileOptions, facilitatorOptions }) {
     const { data, setData, processing, errors, reset, put } = useForm({
         course_profile_id: '',
@@ -36,8 +40,8 @@ export default function UpdateClassModal({ show, onClose, classItem, courseProfi
                 venue: classItem.venue ?? '',
                 start_date: classItem.start_date ?? '',
                 end_date: classItem.end_date ?? '',
-                start_time: classItem.start_time ?? '',
-                end_time: classItem.end_time ?? '',
+                start_time: toTimeInputValue(classItem.start_time),
+                end_time: toTimeInputValue(classItem.end_time),
             });
         }
     }, [classItem]);

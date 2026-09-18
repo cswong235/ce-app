@@ -2,6 +2,7 @@ import Modal from '@/Components/Modal';
 import SecondaryButton from '@/Components/SecondaryButton';
 import PrimaryButton from '@/Components/PrimaryButton';
 import InputLabel from '@/Components/InputLabel';
+import InputError from '@/Components/InputError';
 import TextInput from '@/Components/TextInput';
 import HoverTooltip from '@/Components/HoverTooltip';
 import axios from 'axios';
@@ -24,6 +25,9 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
     const [selectedClassId, setSelectedClassId] = useState('');
     const [assigning, setAssigning] = useState(false);
     const [rejecting, setRejecting] = useState(false);
+    const [showingRejectModal, setShowingRejectModal] = useState(false);
+    const [rejectReason, setRejectReason] = useState('');
+    const [rejectReasonError, setRejectReasonError] = useState('');
     const [manualEntry, setManualEntry] = useState({
         form_name: '',
         form_email: '',
@@ -120,19 +124,35 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
         }).finally(() => setAssigning(false));
     };
 
-    const handleBulkReject = () => {
+    const openRejectModal = () => {
         if (selectedIds.length === 0) return;
+        setRejectReason('');
+        setRejectReasonError('');
+        setShowingRejectModal(true);
+    };
 
-        const reason = window.prompt(`Reason for rejecting ${selectedIds.length} registration(s)?`);
-        if (!reason) return;
+    const closeRejectModal = () => {
+        setShowingRejectModal(false);
+        setRejectReason('');
+        setRejectReasonError('');
+    };
+
+    const confirmBulkReject = (event) => {
+        event.preventDefault();
+
+        if (!rejectReason.trim()) {
+            setRejectReasonError('A reason for rejection is required.');
+            return;
+        }
 
         setRejecting(true);
         axios.post(route('class_registration.bulk_reject', batchId), {
             registration_ids: selectedIds,
-            rejection_reason: reason,
+            rejection_reason: rejectReason,
         }).then(() => {
             fetchBatch();
             setSelectedIds([]);
+            closeRejectModal();
         }).finally(() => setRejecting(false));
     };
 
@@ -183,6 +203,7 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
         (selectedClass.enrollments_count + selectedIds.length) > suggestedCapacity;
 
     return (
+        <>
         <Modal show={show} onClose={onClose} maxWidth="7xl">
             <div className="max-h-[85vh] overflow-y-auto p-6">
                 <div className="flex items-start justify-between gap-4">
@@ -487,7 +508,7 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
 
                                     <SecondaryButton
                                         type="button"
-                                        onClick={handleBulkReject}
+                                        onClick={openRejectModal}
                                         disabled={selectedIds.length === 0 || rejecting}
                                         className="rounded border border-red-600 px-4 py-2 text-sm text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
@@ -504,5 +525,39 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                 </div>
             </div>
         </Modal>
+
+        <Modal show={showingRejectModal} onClose={closeRejectModal} maxWidth="md">
+            <form onSubmit={confirmBulkReject} className="p-6">
+                <h2 className="text-lg font-medium text-gray-900">Reject Registrations</h2>
+
+                <p className="mt-2 text-sm text-gray-600">
+                    You are about to reject <strong>{selectedIds.length}</strong> registration(s).
+                </p>
+
+                <div className="mt-4">
+                    <div className="flex items-center gap-1">
+                        <InputLabel htmlFor="bulk-rejection-reason" value="Reason for rejection" />
+                        <span className="text-red-500" aria-hidden="true">*</span>
+                    </div>
+                    <textarea
+                        id="bulk-rejection-reason"
+                        value={rejectReason}
+                        onChange={(event) => setRejectReason(event.target.value)}
+                        placeholder="Explain why these registrations are being rejected..."
+                        rows="4"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <InputError message={rejectReasonError} className="mt-2" />
+                </div>
+
+                <div className="mt-6 flex justify-end gap-3">
+                    <SecondaryButton type="button" onClick={closeRejectModal}>Cancel</SecondaryButton>
+                    <PrimaryButton type="submit" disabled={rejecting} className="!bg-red-600 hover:!bg-red-700">
+                        {rejecting ? 'Rejecting...' : 'Reject'}
+                    </PrimaryButton>
+                </div>
+            </form>
+        </Modal>
+        </>
     );
 }

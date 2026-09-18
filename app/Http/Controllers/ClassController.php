@@ -60,7 +60,6 @@ class ClassController extends Controller
             'facilitator_ids.*' => ['integer', 'exists:users,id'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'status' => ['required', 'in:planning,open,in_progress,completed,cancelled'],
             'language' => ['required', 'string', 'max:255'],
             'mode' => ['required', 'in:online,hybrid,physical'],
             'venue' => ['nullable', 'string', 'max:255'],
@@ -77,7 +76,7 @@ class ClassController extends Controller
             $this->assertFacilitatorIsAppointed($facilitatorId, $validated['course_profile_id'], 'facilitator_ids');
         }
 
-        $class = Classes::create($validated);
+        $class = Classes::create([...$validated, 'status' => 'planning']);
         $class->facilitators()->sync($facilitatorIds);
 
         return redirect()->route('class');

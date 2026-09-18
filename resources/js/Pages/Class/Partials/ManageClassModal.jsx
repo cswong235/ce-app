@@ -16,6 +16,14 @@ const statusLabels = {
     cancelled: 'Cancelled',
 };
 
+const statusColors = {
+    planning: 'bg-gray-100 text-gray-600',
+    open: 'bg-blue-100 text-blue-700',
+    in_progress: 'bg-indigo-100 text-indigo-700',
+    completed: 'bg-green-100 text-green-800',
+    cancelled: 'bg-red-100 text-red-800',
+};
+
 const enrollmentStatusColors = {
     active: 'bg-green-100 text-green-800',
     left: 'bg-gray-100 text-gray-600',
@@ -208,7 +216,7 @@ export default function ManageClassModal({ classId, show, onClose }) {
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Status</dt>
                                     <dd className="mt-1">
-                                        <span className="inline-flex rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-medium text-indigo-700">
+                                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusColors[classData.status] ?? 'bg-gray-100 text-gray-600'}`}>
                                             {statusLabels[classData.status] ?? classData.status}
                                         </span>
                                     </dd>
