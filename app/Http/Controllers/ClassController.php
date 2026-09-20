@@ -25,7 +25,7 @@ class ClassController extends Controller
 
         return Inertia::render('Class/Class', [
             'classes' => Classes::query()
-                ->with(['courseProfile:id,title', 'facilitators:id,name'])
+                ->with(['courseProfile:id,title', 'facilitators:id,name', 'classAdmin'])
                 ->withCount('enrollments')
                 ->latest()
                 ->get(),
@@ -33,6 +33,10 @@ class ClassController extends Controller
                 ->orderBy('title')
                 ->get(['id', 'title']),
             'facilitatorOptions' => $this->appointedFacilitatorsByCourseProfile(),
+            'committeeOptions' => User::query()
+                ->whereHas('committeeDetails')
+                ->orderBy('name')
+                ->get(['id', 'name']),
         ]);
     }
 
@@ -44,11 +48,6 @@ class ClassController extends Controller
         return response()->json([
             'class' => $class->load(['courseProfile:id,title', 'facilitators:id,name', 'classAdmin.committee:id,name']),
             'graduationItems' => GraduationItem::where('class_id', $class->id)->get(),
-            'committeeOptions' => User::query()
-                ->whereHas('committeeDetails')
-                ->orderBy('name')
-                ->get(['id', 'name']),
-            'facilitatorOptions' => $this->appointedFacilitatorsForCourseProfile($class->course_profile_id),
             'enrollments' => ClassEnrollment::query()
                 ->where('class_id', $class->id)
                 ->with('student:id,name,email')
@@ -63,6 +62,7 @@ class ClassController extends Controller
             'course_profile_id' => ['required', 'integer', 'exists:course_profiles,id'],
             'facilitator_ids' => ['nullable', 'array'],
             'facilitator_ids.*' => ['integer', 'exists:users,id'],
+            'class_admin_id' => ['nullable', 'integer', 'exists:users,id'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'language' => ['required', 'string', 'max:255'],
@@ -75,7 +75,8 @@ class ClassController extends Controller
         ]);
 
         $facilitatorIds = $validated['facilitator_ids'] ?? [];
-        unset($validated['facilitator_ids']);
+        $classAdminId = $validated['class_admin_id'] ?? null;
+        unset($validated['facilitator_ids'], $validated['class_admin_id']);
 
         foreach ($facilitatorIds as $facilitatorId) {
             $this->assertFacilitatorIsAppointed($facilitatorId, $validated['course_profile_id'], 'facilitator_ids');
@@ -83,6 +84,7 @@ class ClassController extends Controller
 
         $class = Classes::create([...$validated, 'status' => 'planning']);
         $class->facilitators()->sync($facilitatorIds);
+        $this->syncClassAdmin($class, $classAdminId);
 
         return redirect()->route('class');
     }
@@ -93,6 +95,7 @@ class ClassController extends Controller
             'course_profile_id' => ['required', 'integer', 'exists:course_profiles,id'],
             'facilitator_ids' => ['nullable', 'array'],
             'facilitator_ids.*' => ['integer', 'exists:users,id'],
+            'class_admin_id' => ['nullable', 'integer', 'exists:users,id'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'status' => ['required', 'in:planning,open,in_progress,completed,cancelled'],
@@ -106,7 +109,8 @@ class ClassController extends Controller
         ]);
 
         $facilitatorIds = $validated['facilitator_ids'] ?? [];
-        unset($validated['facilitator_ids']);
+        $classAdminId = $validated['class_admin_id'] ?? null;
+        unset($validated['facilitator_ids'], $validated['class_admin_id']);
 
         foreach ($facilitatorIds as $facilitatorId) {
             $this->assertFacilitatorIsAppointed($facilitatorId, $validated['course_profile_id'], 'facilitator_ids');
@@ -114,30 +118,9 @@ class ClassController extends Controller
 
         $class->update($validated);
         $class->facilitators()->sync($facilitatorIds);
+        $this->syncClassAdmin($class, $classAdminId);
 
         return redirect()->route('class');
-    }
-
-    public function addFacilitator(Request $request, Classes $class): JsonResponse
-    {
-        $validated = $request->validate([
-            'facilitator_id' => ['required', 'integer', 'exists:users,id'],
-        ]);
-
-        $this->assertFacilitatorIsAppointed($validated['facilitator_id'], $class->course_profile_id);
-
-        $class->facilitators()->syncWithoutDetaching([
-            $validated['facilitator_id'] => ['assigned_at' => now()],
-        ]);
-
-        return response()->json(['success' => true]);
-    }
-
-    public function removeFacilitator(Classes $class, User $facilitator): JsonResponse
-    {
-        $class->facilitators()->detach($facilitator->id);
-
-        return response()->json(['success' => true]);
     }
 
     public function destroy(Classes $class): RedirectResponse
@@ -160,6 +143,23 @@ class ClassController extends Controller
         return response()->json(['success' => true, 'path' => $path]);
     }
 
+    private function syncClassAdmin(Classes $class, ?int $committeeId): void
+    {
+        if (!$committeeId) {
+            ClassAdmin::where('class_id', $class->id)->delete();
+            return;
+        }
+
+        $current = ClassAdmin::where('class_id', $class->id)->first();
+
+        if ($current?->committee_id !== $committeeId) {
+            ClassAdmin::updateOrCreate(
+                ['class_id' => $class->id],
+                ['committee_id' => $committeeId, 'assigned_at' => now()]
+            );
+        }
+    }
+
     // A facilitator can only be assigned to a class if they've been appointed
     // (facilitator_statuses.status = 'appointed') for that class's course profile.
     private function assertFacilitatorIsAppointed(?int $facilitatorId, int $courseProfileId, string $field = 'facilitator_id'): void
@@ -179,20 +179,6 @@ class ClassController extends Controller
                 $field => 'Selected facilitator is not appointed for this course profile.',
             ]);
         }
-    }
-
-    private function appointedFacilitatorsForCourseProfile(int $courseProfileId)
-    {
-        return FacilitatorStatus::query()
-            ->where('course_profile_id', $courseProfileId)
-            ->where('status', 'appointed')
-            ->with('student:id,name')
-            ->get()
-            ->pluck('student')
-            ->filter()
-            ->unique('id')
-            ->sortBy('name')
-            ->values();
     }
 
     private function appointedFacilitatorsByCourseProfile()

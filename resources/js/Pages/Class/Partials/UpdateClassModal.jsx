@@ -1,6 +1,7 @@
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import Modal from '@/Components/Modal';
+import MultiSelectPicker from '@/Components/MultiSelectPicker';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
@@ -11,10 +12,11 @@ function toTimeInputValue(value) {
     return value ? value.slice(0, 5) : '';
 }
 
-export default function UpdateClassModal({ show, onClose, classItem, courseProfileOptions, facilitatorOptions }) {
+export default function UpdateClassModal({ show, onClose, classItem, courseProfileOptions, facilitatorOptions, committeeOptions }) {
     const { data, setData, processing, errors, reset, put } = useForm({
         course_profile_id: '',
         facilitator_ids: [],
+        class_admin_id: '',
         name: '',
         description: '',
         status: 'planning',
@@ -32,6 +34,7 @@ export default function UpdateClassModal({ show, onClose, classItem, courseProfi
             setData({
                 course_profile_id: classItem.course_profile_id ?? '',
                 facilitator_ids: classItem.facilitators?.map((f) => f.id) ?? [],
+                class_admin_id: classItem.class_admin?.committee_id ?? '',
                 name: classItem.name ?? '',
                 description: classItem.description ?? '',
                 status: classItem.status ?? 'planning',
@@ -192,25 +195,35 @@ export default function UpdateClassModal({ show, onClose, classItem, courseProfi
                                 <InputLabel value="Facilitators" />
                                 {!data.course_profile_id ? (
                                     <p className="mt-1 text-xs text-gray-500">Select a course profile first.</p>
-                                ) : (facilitatorOptions?.[data.course_profile_id] ?? []).length === 0 ? (
-                                    <p className="mt-1 text-xs text-gray-500">No appointed facilitators for this course profile yet.</p>
                                 ) : (
-                                    <div className="mt-1 max-h-40 space-y-1 overflow-y-auto rounded-md border border-gray-300 p-2">
-                                        {(facilitatorOptions?.[data.course_profile_id] ?? []).map((facilitator) => (
-                                            <label key={facilitator.id} className="flex items-center gap-2 text-sm text-gray-700">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={data.facilitator_ids.includes(facilitator.id)}
-                                                    onChange={(event) => setData('facilitator_ids', event.target.checked
-                                                        ? [...data.facilitator_ids, facilitator.id]
-                                                        : data.facilitator_ids.filter((id) => id !== facilitator.id))}
-                                                />
-                                                {facilitator.name}
-                                            </label>
-                                        ))}
+                                    <div className="mt-1">
+                                        <MultiSelectPicker
+                                            options={facilitatorOptions?.[data.course_profile_id] ?? []}
+                                            knownItems={classItem?.facilitators ?? []}
+                                            value={data.facilitator_ids}
+                                            onChange={(ids) => setData('facilitator_ids', ids)}
+                                            placeholder="Search facilitators"
+                                            emptyMessage="No appointed facilitators for this course profile yet."
+                                        />
                                     </div>
                                 )}
                                 <InputError message={errors.facilitator_ids} className="mt-2" />
+                            </div>
+
+                            <div>
+                                <InputLabel htmlFor="update-class-admin" value="Class admin" />
+                                <select
+                                    id="update-class-admin"
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                    value={data.class_admin_id}
+                                    onChange={(event) => setData('class_admin_id', event.target.value)}
+                                >
+                                    <option value="">No class admin</option>
+                                    {committeeOptions?.map((member) => (
+                                        <option key={member.id} value={member.id}>{member.name}</option>
+                                    ))}
+                                </select>
+                                <InputError message={errors.class_admin_id} className="mt-2" />
                             </div>
 
                             <div>

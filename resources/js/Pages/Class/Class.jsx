@@ -25,7 +25,7 @@ const statusColors = {
     cancelled: 'bg-red-100 text-red-800',
 };
 
-export default function ClassPage({ classes = [], courseProfileOptions = [], facilitatorOptions = [] }) {
+export default function ClassPage({ classes = [], courseProfileOptions = [], facilitatorOptions = [], committeeOptions = [] }) {
     const [showingCreateModal, setShowingCreateModal] = useState(false);
     const [selectedClass, setSelectedClass] = useState(null);
     const [editingClass, setEditingClass] = useState(null);
@@ -361,6 +361,7 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                 onClose={() => setShowingCreateModal(false)}
                 courseProfileOptions={courseProfileOptions}
                 facilitatorOptions={facilitatorOptions}
+                committeeOptions={committeeOptions}
             />
 
             <UpdateClassModal
@@ -368,6 +369,7 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                 classItem={editingClass}
                 courseProfileOptions={courseProfileOptions}
                 facilitatorOptions={facilitatorOptions}
+                committeeOptions={committeeOptions}
                 onClose={() => setEditingClass(null)}
             />
 

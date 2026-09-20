@@ -10,7 +10,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\FacilitatorStatusController;
 use App\Http\Controllers\CommitteeInviteController;
 use App\Http\Controllers\GraduationItemController;
-use App\Http\Controllers\ClassAdminController;
 use App\Http\Controllers\ClassEnrollmentController;
 use App\Http\Controllers\ReminderController;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -49,11 +48,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
         Route::delete('/class/{class}', [ClassController::class, 'destroy'])->name('class.destroy');
         Route::get('/class/{class}', [ClassController::class, 'show'])->name('class.show');
 
-        Route::post('/class/{class}/admin', [ClassAdminController::class, 'store'])->name('class_admin.store');
-        Route::delete('/class/{class}/admin', [ClassAdminController::class, 'destroy'])->name('class_admin.destroy');
 
-        Route::post('/class/{class}/facilitators', [ClassController::class, 'addFacilitator'])->name('class.add_facilitator');
-        Route::delete('/class/{class}/facilitators/{facilitator}', [ClassController::class, 'removeFacilitator'])->name('class.remove_facilitator');
         Route::post('/class/{class}/attendance-record', [ClassController::class, 'uploadAttendanceRecord'])->name('class.upload_attendance_record');
 
         Route::patch('/class/{class}/graduation-date', [GraduationItemController::class, 'updateClassDate'])->name('graduation_item.update_date');

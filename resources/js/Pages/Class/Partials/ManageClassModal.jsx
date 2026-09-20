@@ -45,14 +45,10 @@ export default function ManageClassModal({ classId, show, onClose }) {
     const [loading, setLoading] = useState(false);
     const [classData, setClassData] = useState(null);
     const [graduationItems, setGraduationItems] = useState([]);
-    const [committeeOptions, setCommitteeOptions] = useState([]);
-    const [facilitatorOptions, setFacilitatorOptions] = useState([]);
     const [enrollments, setEnrollments] = useState([]);
     const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState('all');
     const [paymentFilter, setPaymentFilter] = useState('all');
 
-    const [selectedAdminId, setSelectedAdminId] = useState('');
-    const [selectedFacilitatorId, setSelectedFacilitatorId] = useState('');
     const [graduationDate, setGraduationDate] = useState('');
     const [newItemName, setNewItemName] = useState('');
     const [newItemQty, setNewItemQty] = useState('');
@@ -70,11 +66,7 @@ export default function ManageClassModal({ classId, show, onClose }) {
         axios.get(route('class.show', classId)).then((res) => {
             setClassData(res.data.class);
             setGraduationItems(res.data.graduationItems);
-            setCommitteeOptions(res.data.committeeOptions);
-            setFacilitatorOptions(res.data.facilitatorOptions);
             setEnrollments(res.data.enrollments);
-            setSelectedAdminId(res.data.class.class_admin?.committee_id ?? '');
-            setSelectedFacilitatorId('');
             setGraduationDate(res.data.class.graduation_date ?? '');
         }).finally(() => setLoading(false));
     };
@@ -115,30 +107,6 @@ export default function ManageClassModal({ classId, show, onClose }) {
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, enrollmentStatusFilter, paymentFilter]);
-
-    const assignClassAdmin = () => {
-        if (!selectedAdminId) return;
-        axios.post(route('class_admin.store', classId), { committee_id: selectedAdminId }).then(fetchClass);
-    };
-
-    const removeClassAdmin = () => {
-        axios.delete(route('class_admin.destroy', classId)).then(() => {
-            setSelectedAdminId('');
-            fetchClass();
-        });
-    };
-
-    const assignFacilitator = () => {
-        if (!selectedFacilitatorId) return;
-        axios.post(route('class.add_facilitator', classId), { facilitator_id: selectedFacilitatorId }).then(() => {
-            setSelectedFacilitatorId('');
-            fetchClass();
-        });
-    };
-
-    const removeFacilitator = (facilitatorId) => {
-        axios.delete(route('class.remove_facilitator', [classId, facilitatorId])).then(fetchClass);
-    };
 
     const saveGraduationDate = () => {
         axios.patch(route('graduation_item.update_date', classId), { graduation_date: graduationDate || null }).then(fetchClass);
@@ -247,72 +215,25 @@ export default function ManageClassModal({ classId, show, onClose }) {
                         <div className="grid gap-5 sm:grid-cols-2">
                             <section className="rounded-lg border border-gray-200 bg-white p-5">
                                 <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Facilitators</h3>
-                                <div className="mt-3 flex flex-wrap items-center gap-2">
-                                    <select
-                                        value={selectedFacilitatorId}
-                                        onChange={(e) => setSelectedFacilitatorId(e.target.value)}
-                                        className="min-w-0 flex-1 rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    >
-                                        <option value="">Select a facilitator</option>
-                                        {facilitatorOptions
-                                            .filter((f) => !classData.facilitators?.some((assigned) => assigned.id === f.id))
-                                            .map((f) => (
-                                                <option key={f.id} value={f.id}>{f.name}</option>
-                                            ))}
-                                    </select>
-                                    <SecondaryButton type="button" onClick={assignFacilitator}
-                                        className="rounded border border-indigo-600 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50">
-                                        Assign
-                                    </SecondaryButton>
-                                </div>
                                 {classData.facilitators?.length > 0 ? (
-                                    <ul className="mt-3 space-y-1.5">
+                                    <div className="mt-3 flex flex-wrap gap-2">
                                         {classData.facilitators.map((f) => (
-                                            <li key={f.id} className="flex items-center justify-between gap-2 rounded-md bg-gray-50 px-3 py-1.5 text-sm">
-                                                <span className="text-gray-700">{f.name}</span>
-                                                <SecondaryButton type="button" onClick={() => removeFacilitator(f.id)}
-                                                    className="rounded border border-red-600 px-2 py-1 text-xs text-red-600 hover:bg-red-50">
-                                                    Remove
-                                                </SecondaryButton>
-                                            </li>
+                                            <span key={f.id} className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-700">
+                                                {f.name}
+                                            </span>
                                         ))}
-                                    </ul>
+                                    </div>
                                 ) : (
-                                    <p className="mt-2 text-xs text-gray-500">No facilitators assigned yet.</p>
-                                )}
-                                {facilitatorOptions.length === 0 && (
-                                    <p className="mt-1 text-xs text-amber-600">No appointed facilitators for this course profile yet.</p>
+                                    <p className="mt-3 text-sm text-gray-500">No facilitators assigned yet.</p>
                                 )}
                             </section>
 
                             <section className="rounded-lg border border-gray-200 bg-white p-5">
                                 <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Class Admin</h3>
-                                <div className="mt-3 flex flex-wrap items-center gap-2">
-                                    <select
-                                        value={selectedAdminId}
-                                        onChange={(e) => setSelectedAdminId(e.target.value)}
-                                        className="min-w-0 flex-1 rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                    >
-                                        <option value="">Select a committee member</option>
-                                        {committeeOptions.map((c) => (
-                                            <option key={c.id} value={c.id}>{c.name}</option>
-                                        ))}
-                                    </select>
-                                    <SecondaryButton type="button" onClick={assignClassAdmin}
-                                        className="rounded border border-indigo-600 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50">
-                                        Assign
-                                    </SecondaryButton>
-                                    {classData.class_admin && (
-                                        <SecondaryButton type="button" onClick={removeClassAdmin}
-                                            className="rounded border border-red-600 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50">
-                                            Remove
-                                        </SecondaryButton>
-                                    )}
-                                </div>
-                                <p className="mt-2 text-xs text-gray-500">
+                                <p className="mt-3 text-sm text-gray-500">
                                     {classData.class_admin ? (
                                         <>
-                                            Currently assigned to <span className="font-medium text-gray-700">{classData.class_admin.committee?.name}</span> on {formatDate(classData.class_admin.assigned_at)}.
+                                            <span className="font-medium text-gray-700">{classData.class_admin.committee?.name}</span> since {formatDate(classData.class_admin.assigned_at)}.
                                         </>
                                     ) : (
                                         'No class admin assigned yet.'
