@@ -2,8 +2,9 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import SecondaryButton from '@/Components/SecondaryButton';
 import AddStudentModal from './Partials/AddStudentModal';
 import AddCommitteeModal from './Partials/AddCommitteeModal';
+import UpdateUserModal from './Partials/UpdateUserModal';
 import ExportPotentialFacilitatorsModal from './Partials/ExportPotentialFacilitatorsModal';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import ViewUserModal from './Partials/ViewUserModal';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal';
@@ -12,7 +13,9 @@ import placeholder_avatar from '@/Assets/Placeholder.png';
 const PAGE_SIZE = 8;
 
 export default function UserPage({ users = [] }) {
+    const canManage = usePage().props.auth.hasFullAccess;
     const [selectedUser, setSelectedUser] = useState(null);
+    const [editingUser, setEditingUser] = useState(null);
     const [deletingUser, setDeletingUser] = useState(null);
     const [deleteProcessing, setDeleteProcessing] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -92,20 +95,24 @@ export default function UserPage({ users = [] }) {
                                     >
                                         Export Potential Facilitators
                                     </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowingAddStudentModal(true)}
-                                        className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
-                                    >
-                                        + Add Student
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowingAddCommitteeModal(true)}
-                                        className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
-                                    >
-                                        + Add Committee
-                                    </button>
+                                    {canManage && (
+                                        <>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowingAddStudentModal(true)}
+                                                className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
+                                            >
+                                                + Add Student
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowingAddCommitteeModal(true)}
+                                                className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
+                                            >
+                                                + Add Committee
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             </div>
 
@@ -209,11 +216,13 @@ export default function UserPage({ users = [] }) {
                                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                             </svg>
                                                         </button>
+                                                        {canManage && (<>
                                                         <button
                                                             type="button"
-                                                            disabled
-                                                            title="Edit — coming soon"
-                                                            className="rounded p-2 text-gray-300"
+                                                            onClick={() => setEditingUser(user)}
+                                                            aria-label="Edit member"
+                                                            title="Edit"
+                                                            className="rounded p-2 text-gray-600 transition hover:bg-gray-100 hover:text-indigo-600"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="h-5 w-5">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13l-3.43.978.978-3.43a4.5 4.5 0 011.13-1.897L16.862 4.487z" />
@@ -235,6 +244,7 @@ export default function UserPage({ users = [] }) {
                                                                 <line x1="14" y1="11" x2="14" y2="17"></line>
                                                             </svg>
                                                         </button>
+                                                        </>)}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -292,6 +302,12 @@ export default function UserPage({ users = [] }) {
                 userId={selectedUser?.id}
                 show={Boolean(selectedUser)}
                 onClose={() => setSelectedUser(null)}
+            />
+
+            <UpdateUserModal
+                show={Boolean(editingUser)}
+                user={editingUser}
+                onClose={() => setEditingUser(null)}
             />
 
             <ConfirmDeleteModal

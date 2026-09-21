@@ -10,6 +10,10 @@ use App\Models\User;
 use App\Support\PhoneNumberSanitizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -107,6 +111,51 @@ class UserController extends Controller
             ]);
 
             $user->studentDetails()->create(['status' => 'potential']);
+        });
+
+        return redirect()->route('user');
+    }
+
+    public function update(Request $request, User $user): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'phone_number' => ['nullable', 'string', 'max:20'],
+            'role' => ['nullable', 'in:chair,co_chair,committee,system_admin'],
+            'term_start_date' => ['nullable', 'date'],
+        ]);
+
+        $committeeDetails = $user->committeeDetails;
+        $newRole = $committeeDetails ? ($validated['role'] ?? $committeeDetails->role) : null;
+
+        if ($committeeDetails && $user->is($request->user()) && $newRole !== $committeeDetails->role) {
+            throw ValidationException::withMessages([
+                'role' => "You can't change your own role.",
+            ]);
+        }
+
+        DB::transaction(function () use ($validated, $user, $committeeDetails, $newRole) {
+            $user->update([
+                'name' => $validated['name'],
+                'phone_number' => PhoneNumberSanitizer::sanitize($validated['phone_number'] ?? null),
+            ]);
+
+            if (! $committeeDetails) {
+                return;
+            }
+
+            $termStart = $validated['term_start_date'] ?? $committeeDetails->term_start_date;
+
+            // System Admins have no expiring term; every other role serves two years.
+            $committeeDetails->update([
+                'role' => $newRole,
+                'term_start_date' => $termStart,
+                'term_end_date' => $newRole === 'system_admin' || ! $termStart
+                    ? null
+                    : \Carbon\Carbon::parse($termStart)->addYears(2),
+            ]);
+
+            CommitteeInvite::where('email', $user->email)->update(['role' => $newRole]);
         });
 
         return redirect()->route('user');

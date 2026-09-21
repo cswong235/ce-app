@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import CreateBatchModal from './Partials/CreateBatchModal';
 import UpdateBatchModal from './Partials/UpdateBatchModal';
@@ -11,6 +11,7 @@ import { router } from '@inertiajs/react';
 const PAGE_SIZE = 8;
 
 export default function BatchPage({ batches = [], courseProfileOptions = [] }) {
+    const canManage = usePage().props.auth.hasFullAccess;
     const [showingCreateModal, setShowingCreateModal] = useState(false);
     const [editingBatch, setEditingBatch] = useState(null);
     const [managingBatch, setManagingBatch] = useState(null);
@@ -74,13 +75,15 @@ export default function BatchPage({ batches = [], courseProfileOptions = [] }) {
                                 <h1 className="text-xl font-semibold leading-tight text-gray-800">
                                     Registration Batch List
                                 </h1>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowingCreateModal(true)}
-                                    className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
-                                >
-                                    + Add New Batch
-                                </button>
+                                {canManage && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowingCreateModal(true)}
+                                        className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
+                                    >
+                                        + Add New Batch
+                                    </button>
+                                )}
                             </div>
 
                             <div className="mt-2 overflow-hidden bg-gray-100 p-4 shadow-sm sm:rounded-lg">
@@ -152,6 +155,7 @@ export default function BatchPage({ batches = [], courseProfileOptions = [] }) {
                                                         >
                                                             Manage Registrations
                                                         </SecondaryButton>
+                                                        {canManage && (<>
                                                         <button
                                                             type="button"
                                                             onClick={() => setEditingBatch(batch)}
@@ -179,6 +183,7 @@ export default function BatchPage({ batches = [], courseProfileOptions = [] }) {
                                                                 <line x1="14" y1="11" x2="14" y2="17"></line>
                                                             </svg>
                                                         </button>
+                                                        </>)}
                                                     </div>
                                                 </td>
                                             </tr>

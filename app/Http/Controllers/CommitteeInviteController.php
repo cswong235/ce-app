@@ -26,7 +26,10 @@ class CommitteeInviteController extends Controller
             'term_start_date' => ['required', 'date'],
         ]);
 
-        $termEndDate = \Carbon\Carbon::parse($validated['term_start_date'])->addYears(2);
+        // System Admins have no expiring term.
+        $termEndDate = $validated['role'] === 'system_admin'
+            ? null
+            : \Carbon\Carbon::parse($validated['term_start_date'])->addYears(2);
 
         DB::transaction(function () use ($validated, $termEndDate) {
             if (! empty($validated['user_id'])) {
@@ -75,9 +78,11 @@ class CommitteeInviteController extends Controller
             'term_start_date' => ['required', 'date'],
         ]);
 
-        $termEndDate = \Carbon\Carbon::parse($validated['term_start_date'])->addYears(2);
-
         $user = User::where('email', $invite->email)->first();
+
+        $termEndDate = $user?->committeeDetails?->role === 'system_admin'
+            ? null
+            : \Carbon\Carbon::parse($validated['term_start_date'])->addYears(2);
 
         if ($user?->committeeDetails) {
             $user->committeeDetails->update([

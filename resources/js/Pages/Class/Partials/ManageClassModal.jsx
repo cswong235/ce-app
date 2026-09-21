@@ -4,6 +4,7 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import ViewEnrollmentModal from './ViewEnrollmentModal';
 import axios from 'axios';
+import { usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 const PAGE_SIZE = 6;
@@ -41,6 +42,7 @@ function getYear(dateString) {
 }
 
 export default function ManageClassModal({ classId, show, onClose }) {
+    const { auth } = usePage().props;
     const [activeTab, setActiveTab] = useState('details');
     const [loading, setLoading] = useState(false);
     const [classData, setClassData] = useState(null);
@@ -59,6 +61,8 @@ export default function ManageClassModal({ classId, show, onClose }) {
     const [viewingEnrollment, setViewingEnrollment] = useState(null);
     const [uploadingAttendance, setUploadingAttendance] = useState(false);
     const attendanceInputRef = useRef(null);
+
+    const canManage = auth.hasFullAccess || classData?.class_admin?.committee_id === auth.user.id;
 
     const fetchClass = () => {
         if (!classId) return;
@@ -255,6 +259,7 @@ export default function ManageClassModal({ classId, show, onClose }) {
                                         View File
                                     </a>
                                 )}
+                                {canManage && (<>
                                 <SecondaryButton
                                     type="button"
                                     onClick={() => attendanceInputRef.current?.click()}
@@ -272,6 +277,7 @@ export default function ManageClassModal({ classId, show, onClose }) {
                                     disabled={uploadingAttendance}
                                     onChange={uploadAttendanceRecord}
                                 />
+                                </>)}
                             </div>
                             <p className="mt-2 text-xs text-gray-500">
                                 {classData.attendance_record_path
@@ -288,11 +294,14 @@ export default function ManageClassModal({ classId, show, onClose }) {
                                     className="block"
                                     value={graduationDate}
                                     onChange={(e) => setGraduationDate(e.target.value)}
+                                    disabled={!canManage}
                                 />
-                                <SecondaryButton type="button" onClick={saveGraduationDate}
-                                    className="rounded border border-indigo-600 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50">
-                                    Save Date
-                                </SecondaryButton>
+                                {canManage && (
+                                    <SecondaryButton type="button" onClick={saveGraduationDate}
+                                        className="rounded border border-indigo-600 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50">
+                                        Save Date
+                                    </SecondaryButton>
+                                )}
                             </div>
 
                             <div className="mt-5">
@@ -313,10 +322,12 @@ export default function ManageClassModal({ classId, show, onClose }) {
                                                         <td className="px-3 py-2">{item.item_name}</td>
                                                         <td className="px-3 py-2">{item.quantity}</td>
                                                         <td className="px-3 py-2 text-right">
-                                                            <SecondaryButton type="button" onClick={() => removeGraduationItem(item.id)}
-                                                                className="rounded border border-red-600 px-2 py-1 text-xs text-red-600 hover:bg-red-50">
-                                                                Remove
-                                                            </SecondaryButton>
+                                                            {canManage && (
+                                                                <SecondaryButton type="button" onClick={() => removeGraduationItem(item.id)}
+                                                                    className="rounded border border-red-600 px-2 py-1 text-xs text-red-600 hover:bg-red-50">
+                                                                    Remove
+                                                                </SecondaryButton>
+                                                            )}
                                                         </td>
                                                     </tr>
                                                 ))
@@ -328,6 +339,7 @@ export default function ManageClassModal({ classId, show, onClose }) {
                                         </tbody>
                                     </table>
                                 </div>
+                                {canManage && (
                                 <div className="mt-3 flex flex-wrap items-center gap-2">
                                     <TextInput
                                         placeholder="Item name"
@@ -347,6 +359,7 @@ export default function ManageClassModal({ classId, show, onClose }) {
                                         Add
                                     </SecondaryButton>
                                 </div>
+                                )}
                             </div>
                         </section>
                     </div>
@@ -498,6 +511,7 @@ export default function ManageClassModal({ classId, show, onClose }) {
             <ViewEnrollmentModal
                 enrollment={viewingEnrollment}
                 show={Boolean(viewingEnrollment)}
+                readOnly={!canManage}
                 onClose={() => setViewingEnrollment(null)}
                 onUpdated={fetchClass}
             />

@@ -34,6 +34,11 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
+                'role' => $request->user()?->committeeRole(),
+                'hasFullAccess' => $request->user()?->hasFullAccess() ?? false,
+            ],
+            'flash' => [
+                'error' => fn () => $request->session()->get('error'),
             ],
             'pendingRegistrationsCount' => $request->user()
                 ? ClassRegistration::where('status', 'pending')->count()

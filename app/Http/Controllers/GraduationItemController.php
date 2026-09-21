@@ -12,6 +12,8 @@ class GraduationItemController extends Controller
 {
     public function updateClassDate(Request $request, Classes $class): JsonResponse
     {
+        abort_unless($request->user()->canManageClass($class->id), 403);
+
         $validated = $request->validate([
             'graduation_date' => ['nullable', 'date'],
         ]);
@@ -23,6 +25,8 @@ class GraduationItemController extends Controller
 
     public function store(Request $request, Classes $class): JsonResponse
     {
+        abort_unless($request->user()->canManageClass($class->id), 403);
+
         $validated = $request->validate([
             'item_name' => ['required', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
@@ -33,8 +37,10 @@ class GraduationItemController extends Controller
         return response()->json(['success' => true, 'item' => $item]);
     }
 
-    public function destroy(GraduationItem $graduationItem): JsonResponse
+    public function destroy(Request $request, GraduationItem $graduationItem): JsonResponse
     {
+        abort_unless($request->user()->canManageClass($graduationItem->class_id), 403);
+
         $graduationItem->delete();
 
         return response()->json(['success' => true]);

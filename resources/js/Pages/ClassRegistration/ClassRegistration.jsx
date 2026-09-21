@@ -11,7 +11,8 @@ import RejectRegistrationModal from './Partials/RejectRegistrationModal';
 const PAGE_SIZE = 10;
 
 export default function ClassRegistration() {
-    const { registrations = [] } = usePage().props;
+    const { registrations = [], auth } = usePage().props;
+    const canManage = auth.hasFullAccess;
 
     const [currentPage, setCurrentPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState('pending');
@@ -194,7 +195,7 @@ export default function ClassRegistration() {
                                                         >
                                                             View
                                                         </button>
-                                                        {registration.status === 'pending' && (
+                                                        {canManage && registration.status === 'pending' && (
                                                             <>
                                                                 <button
                                                                     onClick={() =>

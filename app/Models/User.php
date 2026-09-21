@@ -76,4 +76,22 @@ class User extends Authenticatable
     {
         return $this->hasMany(ClassAdmin::class, 'committee_id');
     }
+
+    public const FULL_ACCESS_ROLES = ['chair', 'co_chair', 'system_admin'];
+
+    public function committeeRole(): ?string
+    {
+        return $this->committeeDetails?->role;
+    }
+
+    public function hasFullAccess(): bool
+    {
+        return in_array($this->committeeRole(), self::FULL_ACCESS_ROLES, true);
+    }
+
+    public function canManageClass(int $classId): bool
+    {
+        return $this->hasFullAccess()
+            || $this->adminClasses()->where('class_id', $classId)->exists();
+    }
 }

@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import SecondaryButton from '@/Components/SecondaryButton';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import CreateClassModal from './Partials/CreateClassModal';
 import UpdateClassModal from './Partials/UpdateClassModal';
@@ -36,6 +36,7 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
     const [deleteProcessing, setDeleteProcessing] = useState(false);
     const [courseProfileFilter, setCourseProfileFilter] = useState('all');
     const [isSyncing, setIsSyncing] = useState(false);
+    const canManage = usePage().props.auth.hasFullAccess;
 
     useEffect(() => {
         setCurrentPage(1);
@@ -109,13 +110,15 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                                     Class List
                                 </h1>
                                 <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowingCreateModal(true)}
-                                        className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
-                                    >
-                                        + Add New Class
-                                    </button>
+                                    {canManage && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowingCreateModal(true)}
+                                            className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
+                                        >
+                                            + Add New Class
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
@@ -250,6 +253,7 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                                                                 />
                                                             </svg>
                                                         </button>
+                                                        {canManage && (<>
                                                         <button
                                                             type="button"
                                                             onClick={() => setEditingClass(classItem)}
@@ -301,6 +305,7 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                                                                 <line x1="14" y1="11" x2="14" y2="17"></line>
                                                             </svg>
                                                         </button>
+                                                        </>)}
                                                     </div>
                                                 </td>
                                             </tr>

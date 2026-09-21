@@ -6,6 +6,7 @@ import InputError from '@/Components/InputError';
 import TextInput from '@/Components/TextInput';
 import HoverTooltip from '@/Components/HoverTooltip';
 import axios from 'axios';
+import { usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState, useMemo } from 'react';
 
 const statusColors = {
@@ -16,6 +17,7 @@ const statusColors = {
 
 export default function ManageRegistrationsModal({ batchId, show, onClose }) {
     const PAGE_SIZE = 6;
+    const canManage = usePage().props.auth.hasFullAccess;
 
     const [loading, setLoading] = useState(false);
     const [batch, setBatch] = useState(null);
@@ -230,6 +232,7 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                 ) : (
                     <>
                         {/* Intake actions */}
+                        {canManage && (
                         <div className="mt-6 flex flex-wrap items-center gap-3">
                             <SecondaryButton
                                 type="button"
@@ -256,6 +259,7 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                                 disabled={excelUploading}
                             />
                         </div>
+                        )}
 
                         {excelResult && (
                             <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm">
@@ -365,11 +369,13 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                                 <thead className="border-b border-gray-200 bg-gray-100 text-gray-600">
                                     <tr>
                                         <th className="p-2">
-                                            <input
-                                                type="checkbox"
-                                                checked={pendingCount > 0 && selectedIds.length === pendingCount}
-                                                onChange={toggleSelectAllPending}
-                                            />
+                                            {canManage && (
+                                                <input
+                                                    type="checkbox"
+                                                    checked={pendingCount > 0 && selectedIds.length === pendingCount}
+                                                    onChange={toggleSelectAllPending}
+                                                />
+                                            )}
                                         </th>
                                         <th className="p-2">Name</th>
                                         <th className="p-2">Email</th>
@@ -393,12 +399,14 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                                                     className={`border-b transition ${isDecided ? 'bg-gray-50 text-gray-400' : ''}`}
                                                 >
                                                     <td className="p-2">
-                                                        <input
-                                                            type="checkbox"
-                                                            disabled={isDecided}
-                                                            checked={selectedIds.includes(registration.id)}
-                                                            onChange={() => toggleSelected(registration.id)}
-                                                        />
+                                                        {canManage && (
+                                                            <input
+                                                                type="checkbox"
+                                                                disabled={isDecided}
+                                                                checked={selectedIds.includes(registration.id)}
+                                                                onChange={() => toggleSelected(registration.id)}
+                                                            />
+                                                        )}
                                                     </td>
                                                     <td className="p-2">{registration.form_name}</td>
                                                     <td className="p-2">{registration.form_email}</td>
@@ -469,6 +477,7 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                         </div>
 
                         {/* Bulk action bar */}
+                        {canManage && (
                         <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                                 <div className="flex items-center gap-3">
@@ -517,6 +526,7 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                                 </div>
                             </div>
                         </div>
+                        )}
                     </>
                 )}
 

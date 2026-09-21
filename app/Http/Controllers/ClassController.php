@@ -132,6 +132,8 @@ class ClassController extends Controller
 
     public function uploadAttendanceRecord(Request $request, Classes $class): JsonResponse
     {
+        abort_unless($request->user()->canManageClass($class->id), 403);
+
         $request->validate([
             'attendance_record' => ['required', 'file', 'max:10240'],
         ]);

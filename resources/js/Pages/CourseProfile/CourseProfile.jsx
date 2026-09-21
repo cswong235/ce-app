@@ -6,13 +6,14 @@ import AvailableClassesModal from './Partials/AvailableClassesModal';
 import ViewCourseProfileModal from './Partials/ViewCourseProfileModal';
 import ConfirmDeleteModal from '@/Components/ConfirmDeleteModal';
 import ManageFacilitatorsModal from './Partials/ManageFacilitatorsModal';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import { router } from '@inertiajs/react';
 
 const PAGE_SIZE = 8;
 
 export default function CourseProfile({ courseProfiles, prerequisiteOptions, classes }) {
+    const canManage = usePage().props.auth.hasFullAccess;
     const [showingCreateModal, setShowingCreateModal] = useState(false);
     const [showingClassesModal, setShowingClassesModal] = useState(false);
     const [classesCourseProfile, setClassesCourseProfile] = useState(null);
@@ -89,13 +90,15 @@ export default function CourseProfile({ courseProfiles, prerequisiteOptions, cla
                                 <h1 className="text-xl font-semibold leading-tight text-gray-800">
                                     Course Profile List
                                 </h1>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowingCreateModal(true)}
-                                    className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
-                                >
-                                    + Add New Profile
-                                </button>
+                                {canManage && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowingCreateModal(true)}
+                                        className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
+                                    >
+                                        + Add New Profile
+                                    </button>
+                                )}
                             </div>
                             <div className="mt-2 overflow-hidden bg-gray-100 p-4 shadow-sm sm:rounded-lg">
                                 <div className="flex flex-col gap-3 md:flex-row md:items-end">
@@ -207,6 +210,7 @@ export default function CourseProfile({ courseProfiles, prerequisiteOptions, cla
                                                                 />
                                                             </svg>
                                                         </button>
+                                                        {canManage && (<>
                                                         <button
                                                             type="button"
                                                             onClick={() => setEditingCourseProfile(courseProfile)}
@@ -249,6 +253,7 @@ export default function CourseProfile({ courseProfiles, prerequisiteOptions, cla
                                                                 <line x1="14" y1="11" x2="14" y2="17"></line>
                                                             </svg>
                                                         </button>
+                                                        </>)}
                                                     </div>
                                                 </td>
                                             </tr>

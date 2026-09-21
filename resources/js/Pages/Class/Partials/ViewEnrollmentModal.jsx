@@ -29,7 +29,7 @@ function initials(name) {
     return name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase();
 }
 
-export default function ViewEnrollmentModal({ enrollment, show, onClose, onUpdated }) {
+export default function ViewEnrollmentModal({ enrollment, show, onClose, onUpdated, readOnly = false }) {
     const [status, setStatus] = useState('active');
     const [testimonial, setTestimonial] = useState('');
     const [savingTestimonial, setSavingTestimonial] = useState(false);
@@ -97,6 +97,7 @@ export default function ViewEnrollmentModal({ enrollment, show, onClose, onUpdat
                             <select
                                 value={status}
                                 onChange={(e) => updateStatus(e.target.value)}
+                                disabled={readOnly}
                                 className={`rounded-md border-gray-300 py-1.5 pl-3 pr-8 text-sm font-medium shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${statusColors[status] ?? ''}`}
                             >
                                 <option value="active">Active</option>
@@ -124,18 +125,20 @@ export default function ViewEnrollmentModal({ enrollment, show, onClose, onUpdat
                                     View receipt
                                 </a>
                             )}
-                            <label className={`rounded border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-indigo-600 transition hover:bg-indigo-50 ${
-                                uploadingReceipt ? 'cursor-wait opacity-50' : 'cursor-pointer'
-                            }`}>
-                                {uploadingReceipt ? 'Uploading…' : hasReceipt ? 'Replace' : 'Upload'}
-                                <input
-                                    type="file"
-                                    accept=".pdf,.jpg,.jpeg,.png"
-                                    className="hidden"
-                                    disabled={uploadingReceipt}
-                                    onChange={(e) => e.target.files?.[0] && uploadReceipt(e.target.files[0])}
-                                />
-                            </label>
+                            {!readOnly && (
+                                <label className={`rounded border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-indigo-600 transition hover:bg-indigo-50 ${
+                                    uploadingReceipt ? 'cursor-wait opacity-50' : 'cursor-pointer'
+                                }`}>
+                                    {uploadingReceipt ? 'Uploading…' : hasReceipt ? 'Replace' : 'Upload'}
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                        className="hidden"
+                                        disabled={uploadingReceipt}
+                                        onChange={(e) => e.target.files?.[0] && uploadReceipt(e.target.files[0])}
+                                    />
+                                </label>
+                            )}
                         </dd>
                     </div>
                 </dl>
@@ -162,6 +165,7 @@ export default function ViewEnrollmentModal({ enrollment, show, onClose, onUpdat
                         rows="4"
                         value={testimonial}
                         onChange={(e) => setTestimonial(e.target.value)}
+                        readOnly={readOnly}
                         placeholder="Written testimonial or a YouTube link..."
                     />
                 </div>
@@ -169,14 +173,16 @@ export default function ViewEnrollmentModal({ enrollment, show, onClose, onUpdat
 
             <div className="flex items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-6 py-4">
                 <SecondaryButton type="button" onClick={onClose}>Close</SecondaryButton>
-                <button
-                    type="button"
-                    onClick={saveTestimonial}
-                    disabled={savingTestimonial}
-                    className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    {savingTestimonial ? 'Saving...' : 'Save Changes'}
-                </button>
+                {!readOnly && (
+                    <button
+                        type="button"
+                        onClick={saveTestimonial}
+                        disabled={savingTestimonial}
+                        className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {savingTestimonial ? 'Saving...' : 'Save Changes'}
+                    </button>
+                )}
             </div>
         </Modal>
     );

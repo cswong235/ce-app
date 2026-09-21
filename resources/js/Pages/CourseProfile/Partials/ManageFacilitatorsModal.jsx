@@ -2,6 +2,7 @@ import Modal from '@/Components/Modal';
 import SecondaryButton from '@/Components/SecondaryButton';
 import PrimaryButton from '@/Components/PrimaryButton';
 import axios from 'axios';
+import { usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 
 const PAGE_SIZE = 8;
@@ -12,6 +13,7 @@ const facilitatorStatusLabels = {
 };
 
 export default function ManageFacilitatorsModal({ courseProfile, show, onClose }) {
+    const canManage = usePage().props.auth.hasFullAccess;
     const [loading, setLoading] = useState(false);
     const [candidates, setCandidates] = useState([]);
     const [selectedIds, setSelectedIds] = useState([]);
@@ -177,7 +179,7 @@ export default function ManageFacilitatorsModal({ courseProfile, show, onClose }
                                     paginatedCandidates.map((candidate) => (
                                         <tr key={candidate.student_id} className="border-b">
                                             <td className="p-2">
-                                                {!candidate.facilitator_status && (
+                                                {canManage && !candidate.facilitator_status && (
                                                     <input
                                                         type="checkbox"
                                                         checked={selectedIds.includes(candidate.student_id)}
@@ -201,6 +203,7 @@ export default function ManageFacilitatorsModal({ courseProfile, show, onClose }
                                                 )}
                                             </td>
                                             <td className="p-2">
+                                                {canManage && (
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     {candidate.facilitator_status?.status === 'potential' && (
                                                         <SecondaryButton type="button"
@@ -224,6 +227,7 @@ export default function ManageFacilitatorsModal({ courseProfile, show, onClose }
                                                         </SecondaryButton>
                                                     )}
                                                 </div>
+                                                )}
                                             </td>
                                         </tr>
                                     ))
@@ -281,13 +285,15 @@ export default function ManageFacilitatorsModal({ courseProfile, show, onClose }
 
                 <div className="mt-6 flex justify-end gap-3">
                     <SecondaryButton type="button" onClick={onClose}>Close</SecondaryButton>
-                    <PrimaryButton
-                        type="button"
-                        disabled={selectedIds.length === 0 || submitting}
-                        onClick={submitMarking}
-                    >
-                        {submitting ? 'Marking...' : `Mark ${selectedIds.length || ''} as Potential`}
-                    </PrimaryButton>
+                    {canManage && (
+                        <PrimaryButton
+                            type="button"
+                            disabled={selectedIds.length === 0 || submitting}
+                            onClick={submitMarking}
+                        >
+                            {submitting ? 'Marking...' : `Mark ${selectedIds.length || ''} as Potential`}
+                        </PrimaryButton>
+                    )}
                 </div>
             </div>
         </Modal>

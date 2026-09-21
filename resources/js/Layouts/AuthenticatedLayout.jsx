@@ -1,6 +1,7 @@
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import SidebarNavLink from '@/Components/SidebarNavLink';
 import ReminderToastWatcher from '@/Components/ReminderToastWatcher';
+import ErrorToast from '@/Components/ErrorToast';
 import {
     ClassIcon,
     CourseProfileIcon,
@@ -35,6 +36,7 @@ export default function AuthenticatedLayout({ header, children }) {
     return (
         <div className="min-h-screen bg-gray-100">
             <ReminderToastWatcher />
+            <ErrorToast />
             {/* Desktop vertical sidebar: collapsed to icons, slides out on hover */}
             <aside className="group fixed inset-y-0 left-0 z-40 hidden w-16 flex-col border-r border-gray-200 bg-white transition-all duration-300 ease-in-out hover:w-64 hover:shadow-xl sm:flex">
                 <div className="flex h-16 shrink-0 items-center justify-center overflow-hidden border-b border-gray-100 px-4">

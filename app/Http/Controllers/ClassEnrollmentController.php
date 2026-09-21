@@ -11,6 +11,8 @@ class ClassEnrollmentController extends Controller
 {
     public function updateStatus(Request $request, ClassEnrollment $enrollment): JsonResponse
     {
+        abort_unless($request->user()->canManageClass($enrollment->class_id), 403);
+
         $validated = $request->validate([
             'status' => ['required', 'in:active,left,completed'],
         ]);
@@ -46,6 +48,8 @@ class ClassEnrollmentController extends Controller
 
     public function uploadReceipt(Request $request, ClassEnrollment $enrollment): JsonResponse
     {
+        abort_unless($request->user()->canManageClass($enrollment->class_id), 403);
+
         $request->validate([
             'receipt' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
         ]);
@@ -62,6 +66,8 @@ class ClassEnrollmentController extends Controller
 
     public function updateTestimonial(Request $request, ClassEnrollment $enrollment): JsonResponse
     {
+        abort_unless($request->user()->canManageClass($enrollment->class_id), 403);
+
         $validated = $request->validate([
             'testimonial' => ['nullable', 'string'],
         ]);

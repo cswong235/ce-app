@@ -2,6 +2,7 @@ import Modal from '@/Components/Modal';
 import SecondaryButton from '@/Components/SecondaryButton';
 import HoverTooltip from '@/Components/HoverTooltip';
 import axios from 'axios';
+import { usePage } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import placeholder_avatar from '@/Assets/Placeholder.png';
 
@@ -134,6 +135,7 @@ function SubTable({ title, columns, actions, children }) {
 }
 
 export default function ViewUserModal({ userId, show, onClose }) {
+    const canManage = usePage().props.auth.hasFullAccess;
     const [loading, setLoading] = useState(false);
     const [user, setUser] = useState(null);
     const [markingCourseId, setMarkingCourseId] = useState(null);
@@ -315,10 +317,12 @@ export default function ViewUserModal({ userId, show, onClose }) {
                                         <div>
                                             <dt className="text-sm font-medium text-gray-500">Term</dt>
                                             <dd className="mt-1 text-sm text-gray-900">
-                                                {formatDate(user.committee.term_start_date)} – {formatDate(user.committee.term_end_date)}
+                                                {user.committee.term_end_date
+                                                    ? `${formatDate(user.committee.term_start_date)} – ${formatDate(user.committee.term_end_date)}`
+                                                    : `${formatDate(user.committee.term_start_date)} – No expiry`}
                                             </dd>
                                         </div>
-                                        {user.committee.invite_id && (
+                                        {canManage && user.committee.invite_id && (
                                             <div>
                                                 <dt className="text-sm font-medium text-gray-500">Temporary Password</dt>
                                                 <dd className="mt-1">
@@ -513,6 +517,7 @@ export default function ViewUserModal({ userId, show, onClose }) {
                                                             )}
                                                         </td>
                                                         <td className="px-4 py-2">
+                                                            {canManage && (
                                                             <div className="flex flex-wrap items-center gap-2">
                                                                 {!row.facilitatorStatus && (
                                                                     <SecondaryButton
@@ -552,6 +557,7 @@ export default function ViewUserModal({ userId, show, onClose }) {
                                                                     </SecondaryButton>
                                                                 )}
                                                             </div>
+                                                            )}
                                                         </td>
                                                     </tr>
                                                 ))
