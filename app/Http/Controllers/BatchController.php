@@ -19,6 +19,9 @@ class BatchController extends Controller
             'batches' => Batch::query()
                 ->with('courseProfile:id,title')
                 ->withCount('registrations')
+                ->withCount(['registrations as pending_registrations_count' => function ($query) {
+                    $query->where('status', 'pending');
+                }])
                 ->latest()
                 ->get(),
             'courseProfileOptions' => CourseProfile::query()
