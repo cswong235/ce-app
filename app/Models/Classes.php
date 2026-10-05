@@ -28,6 +28,7 @@ class Classes extends Model
         'end_time',
         'graduation_date',
         'attendance_record_path',
+        'wrapup_report_path',
     ];
 
     public function courseProfile(): BelongsTo

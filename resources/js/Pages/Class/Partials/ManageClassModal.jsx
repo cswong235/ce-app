@@ -1,11 +1,9 @@
 import Modal from '@/Components/Modal';
 import SecondaryButton from '@/Components/SecondaryButton';
-import InputLabel from '@/Components/InputLabel';
-import TextInput from '@/Components/TextInput';
 import ViewEnrollmentModal from './ViewEnrollmentModal';
 import axios from 'axios';
 import { usePage } from '@inertiajs/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const PAGE_SIZE = 6;
 
@@ -51,16 +49,10 @@ export default function ManageClassModal({ classId, show, onClose }) {
     const [enrollmentStatusFilter, setEnrollmentStatusFilter] = useState('all');
     const [paymentFilter, setPaymentFilter] = useState('all');
 
-    const [graduationDate, setGraduationDate] = useState('');
-    const [newItemName, setNewItemName] = useState('');
-    const [newItemQty, setNewItemQty] = useState('');
-
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
 
     const [viewingEnrollment, setViewingEnrollment] = useState(null);
-    const [uploadingAttendance, setUploadingAttendance] = useState(false);
-    const attendanceInputRef = useRef(null);
 
     const canManage = auth.hasFullAccess || classData?.class_admin?.committee_id === auth.user.id;
 
@@ -71,7 +63,6 @@ export default function ManageClassModal({ classId, show, onClose }) {
             setClassData(res.data.class);
             setGraduationItems(res.data.graduationItems);
             setEnrollments(res.data.enrollments);
-            setGraduationDate(res.data.class.graduation_date ?? '');
         }).finally(() => setLoading(false));
     };
 
@@ -111,42 +102,6 @@ export default function ManageClassModal({ classId, show, onClose }) {
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, enrollmentStatusFilter, paymentFilter]);
-
-    const saveGraduationDate = () => {
-        axios.patch(route('graduation_item.update_date', classId), { graduation_date: graduationDate || null }).then(fetchClass);
-    };
-
-    const addGraduationItem = () => {
-        if (!newItemName || !newItemQty) return;
-        axios.post(route('graduation_item.store', classId), {
-            item_name: newItemName,
-            quantity: newItemQty,
-        }).then(() => {
-            setNewItemName('');
-            setNewItemQty('');
-            fetchClass();
-        });
-    };
-
-    const removeGraduationItem = (itemId) => {
-        axios.delete(route('graduation_item.destroy', itemId)).then(fetchClass);
-    };
-
-    const uploadAttendanceRecord = (event) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        const formData = new FormData();
-        formData.append('attendance_record', file);
-
-        setUploadingAttendance(true);
-        axios.post(route('class.upload_attendance_record', classId), formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-        }).then(fetchClass).finally(() => {
-            setUploadingAttendance(false);
-            event.target.value = '';
-        });
-    };
 
     return (
         <Modal show={show} onClose={onClose} maxWidth="7xl">
@@ -247,121 +202,70 @@ export default function ManageClassModal({ classId, show, onClose }) {
                         </div>
 
                         <section className="rounded-lg border border-gray-200 bg-white p-5">
-                            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Attendance Record</h3>
-                            <div className="mt-3 flex flex-wrap items-center gap-2">
-                                {classData.attendance_record_path && (
+                            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Graduation</h3>
+                            <dl className="mt-3">
+                                <dt className="text-sm font-medium text-gray-500">Graduation date</dt>
+                                <dd className="mt-1 text-sm text-gray-900">{formatDate(classData.graduation_date)}</dd>
+                            </dl>
+                            <div className="mt-4 overflow-hidden rounded-lg border border-gray-200">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                                        <tr>
+                                            <th className="px-3 py-2 font-medium">Item</th>
+                                            <th className="px-3 py-2 font-medium">Quantity</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {graduationItems.length > 0 ? (
+                                            graduationItems.map((item) => (
+                                                <tr key={item.id}>
+                                                    <td className="px-3 py-2">{item.item_name}</td>
+                                                    <td className="px-3 py-2">{item.quantity}</td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="2" className="px-3 py-3 text-center text-gray-400">No checklist items yet.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <div className="grid gap-5 sm:grid-cols-2">
+                            <section className="rounded-lg border border-gray-200 bg-white p-5">
+                                <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Attendance Record</h3>
+                                {classData.attendance_record_path ? (
                                     <a
                                         href={`/storage/${classData.attendance_record_path}`}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                                        className="mt-3 inline-block rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
                                     >
-                                        View File
+                                        View Attendance
                                     </a>
+                                ) : (
+                                    <p className="mt-3 text-sm text-gray-500">No attendance record uploaded yet.</p>
                                 )}
-                                {canManage && (<>
-                                <SecondaryButton
-                                    type="button"
-                                    onClick={() => attendanceInputRef.current?.click()}
-                                    disabled={uploadingAttendance}
-                                    className="rounded border border-indigo-600 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50"
-                                >
-                                    {uploadingAttendance
-                                        ? 'Uploading...'
-                                        : classData.attendance_record_path ? 'Replace File' : 'Upload File'}
-                                </SecondaryButton>
-                                <input
-                                    type="file"
-                                    ref={attendanceInputRef}
-                                    className="hidden"
-                                    disabled={uploadingAttendance}
-                                    onChange={uploadAttendanceRecord}
-                                />
-                                </>)}
-                            </div>
-                            <p className="mt-2 text-xs text-gray-500">
-                                {classData.attendance_record_path
-                                    ? 'One attendance record on file.'
-                                    : 'No attendance record uploaded yet.'}
-                            </p>
-                        </section>
+                            </section>
 
-                        <section className="rounded-lg border border-gray-200 bg-white p-5">
-                            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Graduation</h3>
-                            <div className="mt-3 flex flex-wrap items-center gap-2">
-                                <TextInput
-                                    type="date"
-                                    className="block"
-                                    value={graduationDate}
-                                    onChange={(e) => setGraduationDate(e.target.value)}
-                                    disabled={!canManage}
-                                />
-                                {canManage && (
-                                    <SecondaryButton type="button" onClick={saveGraduationDate}
-                                        className="rounded border border-indigo-600 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50">
-                                        Save Date
-                                    </SecondaryButton>
+                            <section className="rounded-lg border border-gray-200 bg-white p-5">
+                                <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Wrap-up Report</h3>
+                                {classData.wrapup_report_path ? (
+                                    <a
+                                        href={`/storage/${classData.wrapup_report_path}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="mt-3 inline-block rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                                    >
+                                        View Report
+                                    </a>
+                                ) : (
+                                    <p className="mt-3 text-sm text-gray-500">No wrap-up report uploaded yet.</p>
                                 )}
-                            </div>
-
-                            <div className="mt-5">
-                                <InputLabel value="Graduation checklist" />
-                                <div className="mt-2 overflow-hidden rounded-lg border border-gray-200">
-                                    <table className="w-full text-left text-sm">
-                                        <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
-                                            <tr>
-                                                <th className="px-3 py-2 font-medium">Item</th>
-                                                <th className="px-3 py-2 font-medium">Quantity</th>
-                                                <th className="px-3 py-2"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100">
-                                            {graduationItems.length > 0 ? (
-                                                graduationItems.map((item) => (
-                                                    <tr key={item.id}>
-                                                        <td className="px-3 py-2">{item.item_name}</td>
-                                                        <td className="px-3 py-2">{item.quantity}</td>
-                                                        <td className="px-3 py-2 text-right">
-                                                            {canManage && (
-                                                                <SecondaryButton type="button" onClick={() => removeGraduationItem(item.id)}
-                                                                    className="rounded border border-red-600 px-2 py-1 text-xs text-red-600 hover:bg-red-50">
-                                                                    Remove
-                                                                </SecondaryButton>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            ) : (
-                                                <tr>
-                                                    <td colSpan="3" className="px-3 py-3 text-center text-gray-400">No checklist items yet.</td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                {canManage && (
-                                <div className="mt-3 flex flex-wrap items-center gap-2">
-                                    <TextInput
-                                        placeholder="Item name"
-                                        className="min-w-[10rem] flex-1"
-                                        value={newItemName}
-                                        onChange={(e) => setNewItemName(e.target.value)}
-                                    />
-                                    <TextInput
-                                        type="number"
-                                        placeholder="Qty"
-                                        className="w-24"
-                                        value={newItemQty}
-                                        onChange={(e) => setNewItemQty(e.target.value)}
-                                    />
-                                    <SecondaryButton type="button" onClick={addGraduationItem}
-                                        className="rounded border border-indigo-600 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50">
-                                        Add
-                                    </SecondaryButton>
-                                </div>
-                                )}
-                            </div>
-                        </section>
+                            </section>
+                        </div>
                     </div>
                 ) : (
                     <div className="mt-6">

@@ -36,7 +36,8 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
     const [deleteProcessing, setDeleteProcessing] = useState(false);
     const [courseProfileFilter, setCourseProfileFilter] = useState('all');
     const [isSyncing, setIsSyncing] = useState(false);
-    const canManage = usePage().props.auth.hasFullAccess;
+    const { auth } = usePage().props;
+    const canManage = auth.hasFullAccess;
 
     useEffect(() => {
         setCurrentPage(1);
@@ -110,15 +111,14 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                                     Class List
                                 </h1>
                                 <div className="flex gap-2">
-                                    {canManage && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowingCreateModal(true)}
-                                            className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
-                                        >
-                                            + Add New Class
-                                        </button>
-                                    )}
+                                    <button
+                                        type="button"
+                                        disabled={!canManage}
+                                        onClick={() => setShowingCreateModal(true)}
+                                        className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+                                    >
+                                        + Add New Class
+                                    </button>
                                 </div>
                             </div>
 
@@ -204,7 +204,10 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                                             </tr>
                                         ))
                                     ) : paginatedClasses.length > 0 ? (
-                                        paginatedClasses.map((classItem) => (
+                                        paginatedClasses.map((classItem) => {
+                                            const canManageRow = canManage || classItem.class_admin?.committee_id === auth.user.id;
+
+                                            return (
                                             <tr className="border-b" key={classItem.id}>
                                                 <td className="p-3">{classItem.name}</td>
                                                 <td>{classItem.course_profile?.title ?? 'N/A'}</td>
@@ -253,13 +256,13 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                                                                 />
                                                             </svg>
                                                         </button>
-                                                        {canManage && (<>
                                                         <button
                                                             type="button"
+                                                            disabled={!canManageRow}
                                                             onClick={() => setEditingClass(classItem)}
                                                             aria-label="Edit class"
                                                             title="Edit"
-                                                            className="rounded p-2 text-gray-600 transition hover:bg-gray-100 hover:text-indigo-600"
+                                                            className="rounded p-2 text-gray-600 transition hover:bg-gray-100 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                                                         >
                                                             <svg
                                                                 xmlns="http://www.w3.org/2000/svg"
@@ -283,10 +286,11 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                                                         </button>
                                                         <button
                                                             type="button"
+                                                            disabled={!canManageRow}
                                                             onClick={() => handleDelete(classItem)}
                                                             aria-label="Delete class"
                                                             title="Delete"
-                                                            className="rounded p-2 text-gray-600 transition hover:bg-gray-100 hover:text-red-600"
+                                                            className="rounded p-2 text-gray-600 transition hover:bg-gray-100 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                                                         >
                                                             <svg
                                                                 xmlns="http://www.w3.org/2000/svg"
@@ -305,11 +309,11 @@ export default function ClassPage({ classes = [], courseProfileOptions = [], fac
                                                                 <line x1="14" y1="11" x2="14" y2="17"></line>
                                                             </svg>
                                                         </button>
-                                                        </>)}
                                                     </div>
                                                 </td>
                                             </tr>
-                                        ))
+                                            );
+                                        })
                                     ) : (
                                         <tr>
                                             <td className="p-4 text-sm text-gray-500" colSpan="7">

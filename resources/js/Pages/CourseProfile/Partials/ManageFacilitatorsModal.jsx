@@ -179,9 +179,11 @@ export default function ManageFacilitatorsModal({ courseProfile, show, onClose }
                                     paginatedCandidates.map((candidate) => (
                                         <tr key={candidate.student_id} className="border-b">
                                             <td className="p-2">
-                                                {canManage && !candidate.facilitator_status && (
+                                                {!candidate.facilitator_status && (
                                                     <input
                                                         type="checkbox"
+                                                        disabled={!canManage}
+                                                        className="disabled:cursor-not-allowed disabled:opacity-40"
                                                         checked={selectedIds.includes(candidate.student_id)}
                                                         onChange={() => toggleSelected(candidate.student_id)}
                                                     />
@@ -203,31 +205,29 @@ export default function ManageFacilitatorsModal({ courseProfile, show, onClose }
                                                 )}
                                             </td>
                                             <td className="p-2">
-                                                {canManage && (
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     {candidate.facilitator_status?.status === 'potential' && (
-                                                        <SecondaryButton type="button"
+                                                        <SecondaryButton type="button" disabled={!canManage}
                                                             onClick={() => promoteToAppointed(candidate.facilitator_status.id)}
                                                             className="rounded border border-green-600 px-2 py-1 text-xs text-green-700 hover:bg-green-50">
                                                             Appoint
                                                         </SecondaryButton>
                                                     )}
                                                     {candidate.facilitator_status?.status === 'appointed' && (
-                                                        <SecondaryButton type="button"
+                                                        <SecondaryButton type="button" disabled={!canManage}
                                                             onClick={() => revertToPotential(candidate.facilitator_status.id)}
                                                             className="rounded border !border-amber-600 px-2 py-1 text-xs !text-amber-700 hover:!bg-amber-50">
                                                             Revert
                                                         </SecondaryButton>
                                                     )}
                                                     {candidate.facilitator_status && (
-                                                        <SecondaryButton type="button"
+                                                        <SecondaryButton type="button" disabled={!canManage}
                                                             onClick={() => removeFacilitatorMark(candidate.facilitator_status.id)}
                                                             className="rounded border border-red-600 px-2 py-1 text-xs text-red-600 hover:bg-red-50">
                                                             Remove
                                                         </SecondaryButton>
                                                     )}
                                                 </div>
-                                                )}
                                             </td>
                                         </tr>
                                     ))
@@ -285,15 +285,13 @@ export default function ManageFacilitatorsModal({ courseProfile, show, onClose }
 
                 <div className="mt-6 flex justify-end gap-3">
                     <SecondaryButton type="button" onClick={onClose}>Close</SecondaryButton>
-                    {canManage && (
-                        <PrimaryButton
-                            type="button"
-                            disabled={selectedIds.length === 0 || submitting}
-                            onClick={submitMarking}
-                        >
-                            {submitting ? 'Marking...' : `Mark ${selectedIds.length || ''} as Potential`}
-                        </PrimaryButton>
-                    )}
+                    <PrimaryButton
+                        type="button"
+                        disabled={!canManage || selectedIds.length === 0 || submitting}
+                        onClick={submitMarking}
+                    >
+                        {submitting ? 'Marking...' : `Mark ${selectedIds.length || ''} as Potential`}
+                    </PrimaryButton>
                 </div>
             </div>
         </Modal>

@@ -75,15 +75,14 @@ export default function BatchPage({ batches = [], courseProfileOptions = [] }) {
                                 <h1 className="text-xl font-semibold leading-tight text-gray-800">
                                     Registration Batch List
                                 </h1>
-                                {canManage && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowingCreateModal(true)}
-                                        className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500"
-                                    >
-                                        + Add New Batch
-                                    </button>
-                                )}
+                                <button
+                                    type="button"
+                                    disabled={!canManage}
+                                    onClick={() => setShowingCreateModal(true)}
+                                    className="rounded bg-indigo-600 px-4 py-2 text-white transition duration-150 ease-in-out hover:scale-105 hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+                                >
+                                    + Add New Batch
+                                </button>
                             </div>
 
                             <div className="mt-2 overflow-hidden bg-gray-100 p-4 shadow-sm sm:rounded-lg">
@@ -155,13 +154,13 @@ export default function BatchPage({ batches = [], courseProfileOptions = [] }) {
                                                         >
                                                             Manage Registrations
                                                         </SecondaryButton>
-                                                        {canManage && (<>
                                                         <button
                                                             type="button"
+                                                            disabled={!canManage}
                                                             onClick={() => setEditingBatch(batch)}
                                                             aria-label="Edit batch"
                                                             title="Edit"
-                                                            className="rounded p-2 text-gray-600 transition hover:bg-gray-100 hover:text-indigo-600"
+                                                            className="rounded p-2 text-gray-600 transition hover:bg-gray-100 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="h-5 w-5">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13l-3.43.978.978-3.43a4.5 4.5 0 011.13-1.897L16.862 4.487z" />
@@ -170,10 +169,11 @@ export default function BatchPage({ batches = [], courseProfileOptions = [] }) {
                                                         </button>
                                                         <button
                                                             type="button"
+                                                            disabled={!canManage}
                                                             onClick={() => handleDelete(batch)}
                                                             aria-label="Delete batch"
                                                             title="Delete"
-                                                            className="rounded p-2 text-gray-600 transition hover:bg-gray-100 hover:text-red-600"
+                                                            className="rounded p-2 text-gray-600 transition hover:bg-gray-100 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                                                         >
                                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                                                 <path d="M3 6h18"></path>
@@ -183,7 +183,6 @@ export default function BatchPage({ batches = [], courseProfileOptions = [] }) {
                                                                 <line x1="14" y1="11" x2="14" y2="17"></line>
                                                             </svg>
                                                         </button>
-                                                        </>)}
                                                     </div>
                                                 </td>
                                             </tr>

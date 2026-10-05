@@ -232,10 +232,10 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                 ) : (
                     <>
                         {/* Intake actions */}
-                        {canManage && (
                         <div className="mt-6 flex flex-wrap items-center gap-3">
                             <SecondaryButton
                                 type="button"
+                                disabled={!canManage}
                                 onClick={() => setShowManualForm((prev) => !prev)}
                                 className="rounded border border-indigo-600 px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50"
                             >
@@ -245,7 +245,7 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                             <SecondaryButton
                                 type="button"
                                 onClick={() => excelInputRef.current?.click()}
-                                disabled={excelUploading}
+                                disabled={!canManage || excelUploading}
                                 className="rounded border border-indigo-600 px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50"
                             >
                                 {excelUploading ? 'Uploading...' : 'Upload Excel'}
@@ -256,10 +256,9 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                                 accept=".xlsx,.xls"
                                 className="hidden"
                                 onChange={handleExcelUpload}
-                                disabled={excelUploading}
+                                disabled={!canManage || excelUploading}
                             />
                         </div>
-                        )}
 
                         {excelResult && (
                             <div className="mt-3 rounded-md border border-gray-200 bg-gray-50 p-3 text-sm">
@@ -369,13 +368,13 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                                 <thead className="border-b border-gray-200 bg-gray-100 text-gray-600">
                                     <tr>
                                         <th className="p-2">
-                                            {canManage && (
-                                                <input
-                                                    type="checkbox"
-                                                    checked={pendingCount > 0 && selectedIds.length === pendingCount}
-                                                    onChange={toggleSelectAllPending}
-                                                />
-                                            )}
+                                            <input
+                                                type="checkbox"
+                                                disabled={!canManage}
+                                                className="disabled:cursor-not-allowed disabled:opacity-40"
+                                                checked={pendingCount > 0 && selectedIds.length === pendingCount}
+                                                onChange={toggleSelectAllPending}
+                                            />
                                         </th>
                                         <th className="p-2">Name</th>
                                         <th className="p-2">Email</th>
@@ -399,14 +398,13 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                                                     className={`border-b transition ${isDecided ? 'bg-gray-50 text-gray-400' : ''}`}
                                                 >
                                                     <td className="p-2">
-                                                        {canManage && (
-                                                            <input
-                                                                type="checkbox"
-                                                                disabled={isDecided}
-                                                                checked={selectedIds.includes(registration.id)}
-                                                                onChange={() => toggleSelected(registration.id)}
-                                                            />
-                                                        )}
+                                                        <input
+                                                            type="checkbox"
+                                                            disabled={!canManage || isDecided}
+                                                            className="disabled:cursor-not-allowed disabled:opacity-40"
+                                                            checked={selectedIds.includes(registration.id)}
+                                                            onChange={() => toggleSelected(registration.id)}
+                                                        />
                                                     </td>
                                                     <td className="p-2">{registration.form_name}</td>
                                                     <td className="p-2">{registration.form_email}</td>
@@ -477,7 +475,6 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                         </div>
 
                         {/* Bulk action bar */}
-                        {canManage && (
                         <div className="mt-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                                 <div className="flex items-center gap-3">
@@ -496,7 +493,8 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                                         <select
                                             value={selectedClassId}
                                             onChange={(e) => setSelectedClassId(e.target.value)}
-                                            className="w-full rounded-l-md rounded-r-none border-gray-300 border-r-0 text-sm focus:z-10 focus:border-indigo-500 focus:ring-indigo-500 sm:w-56"
+                                            disabled={!canManage}
+                                            className="w-full rounded-l-md rounded-r-none border-gray-300 border-r-0 text-sm focus:z-10 focus:border-indigo-500 focus:ring-indigo-500 sm:w-56 disabled:cursor-not-allowed disabled:opacity-40"
                                         >
                                             <option value="">Select an open class...</option>
                                             {eligibleClasses.map((cls) => (
@@ -505,7 +503,7 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                                         </select>
                                         <PrimaryButton
                                             type="button"
-                                            disabled={selectedIds.length === 0 || !selectedClassId || assigning}
+                                            disabled={!canManage || selectedIds.length === 0 || !selectedClassId || assigning}
                                             onClick={handleAssign}
                                             className="rounded-l-none border-transparent bg-indigo-600 hover:bg-indigo-500 focus:bg-indigo-500 active:bg-indigo-700"
                                         >
@@ -518,7 +516,7 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                                     <SecondaryButton
                                         type="button"
                                         onClick={openRejectModal}
-                                        disabled={selectedIds.length === 0 || rejecting}
+                                        disabled={!canManage || selectedIds.length === 0 || rejecting}
                                         className="rounded border border-red-600 px-4 py-2 text-sm text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         {rejecting ? 'Rejecting...' : 'Reject'}
@@ -526,7 +524,6 @@ export default function ManageRegistrationsModal({ batchId, show, onClose }) {
                                 </div>
                             </div>
                         </div>
-                        )}
                     </>
                 )}
 

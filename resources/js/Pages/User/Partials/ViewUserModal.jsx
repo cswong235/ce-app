@@ -322,7 +322,7 @@ export default function ViewUserModal({ userId, show, onClose }) {
                                                     : `${formatDate(user.committee.term_start_date)} – No expiry`}
                                             </dd>
                                         </div>
-                                        {canManage && user.committee.invite_id && (
+                                        {user.committee.invite_id && (
                                             <div>
                                                 <dt className="text-sm font-medium text-gray-500">Temporary Password</dt>
                                                 <dd className="mt-1">
@@ -335,7 +335,7 @@ export default function ViewUserModal({ userId, show, onClose }) {
                                                             </SecondaryButton>
                                                         </div>
                                                     ) : (
-                                                        <SecondaryButton type="button" onClick={revealPassword} disabled={revealingPassword}
+                                                        <SecondaryButton type="button" onClick={revealPassword} disabled={!canManage || revealingPassword}
                                                             className="rounded border border-indigo-600 px-2 py-1 text-xs text-indigo-600 hover:bg-indigo-50">
                                                             {revealingPassword ? 'Loading...' : 'Reveal Password'}
                                                         </SecondaryButton>
@@ -517,12 +517,11 @@ export default function ViewUserModal({ userId, show, onClose }) {
                                                             )}
                                                         </td>
                                                         <td className="px-4 py-2">
-                                                            {canManage && (
                                                             <div className="flex flex-wrap items-center gap-2">
                                                                 {!row.facilitatorStatus && (
                                                                     <SecondaryButton
                                                                         type="button"
-                                                                        disabled={markingCourseId === row.courseProfile.id}
+                                                                        disabled={!canManage || markingCourseId === row.courseProfile.id}
                                                                         onClick={() => markAsPotential(row.courseProfile.id)}
                                                                         className="rounded border border-indigo-600 px-2 py-1 text-xs text-indigo-600 hover:bg-indigo-50"
                                                                     >
@@ -532,6 +531,7 @@ export default function ViewUserModal({ userId, show, onClose }) {
                                                                 {row.facilitatorStatus?.status === 'potential' && (
                                                                     <SecondaryButton
                                                                         type="button"
+                                                                        disabled={!canManage}
                                                                         onClick={() => promoteToAppointed(row.facilitatorStatus.id)}
                                                                         className="rounded border border-green-600 px-2 py-1 text-xs text-green-700 hover:bg-green-50"
                                                                     >
@@ -541,6 +541,7 @@ export default function ViewUserModal({ userId, show, onClose }) {
                                                                 {row.facilitatorStatus?.status === 'appointed' && (
                                                                     <SecondaryButton
                                                                         type="button"
+                                                                        disabled={!canManage}
                                                                         onClick={() => revertToPotential(row.facilitatorStatus.id)}
                                                                         className="rounded border !border-amber-600 px-2 py-1 text-xs !text-amber-700 hover:!bg-amber-50"
                                                                     >
@@ -550,6 +551,7 @@ export default function ViewUserModal({ userId, show, onClose }) {
                                                                 {row.facilitatorStatus && (
                                                                     <SecondaryButton
                                                                         type="button"
+                                                                        disabled={!canManage}
                                                                         onClick={() => removeFacilitatorMark(row.facilitatorStatus.id)}
                                                                         className="rounded border border-red-600 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
                                                                     >
@@ -557,7 +559,6 @@ export default function ViewUserModal({ userId, show, onClose }) {
                                                                     </SecondaryButton>
                                                                 )}
                                                             </div>
-                                                            )}
                                                         </td>
                                                     </tr>
                                                 ))

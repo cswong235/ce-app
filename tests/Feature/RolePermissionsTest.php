@@ -10,7 +10,9 @@ use App\Models\CommitteeInvite;
 use App\Models\CourseProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class RolePermissionsTest extends TestCase
@@ -139,8 +141,60 @@ class RolePermissionsTest extends TestCase
             ->patchJson(route('class_enrollment.update_status', $otherEnrollment->id), ['status' => 'left'])
             ->assertForbidden();
 
+        // Client decision: a Class Admin gets full edit/delete rights, just like Chair/Co-Chair,
+        // but only on the one class they're assigned to.
         $this->actingAs($committee)
-            ->putJson(route('class.update', $ownClass->id), ['name' => 'Renamed'])
+            ->put(route('class.update', $ownClass->id), [
+                'course_profile_id' => $ownClass->course_profile_id,
+                'class_admin_id' => $committee->id,
+                'name' => 'Renamed',
+                'status' => 'open',
+                'language' => 'English',
+                'mode' => 'online',
+            ])
+            ->assertRedirect(route('class'));
+        $this->assertSame('Renamed', $ownClass->fresh()->name);
+
+        $this->actingAs($committee)
+            ->putJson(route('class.update', $otherClass->id), [
+                'course_profile_id' => $otherClass->course_profile_id,
+                'name' => 'Should not work',
+                'status' => 'open',
+                'language' => 'English',
+                'mode' => 'online',
+            ])
+            ->assertForbidden();
+
+        $this->actingAs($committee)
+            ->deleteJson(route('class.destroy', $otherClass->id))
+            ->assertForbidden();
+
+        $this->actingAs($committee)
+            ->delete(route('class.destroy', $ownClass->id))
+            ->assertRedirect(route('class'));
+        $this->assertSoftDeleted('classes', ['id' => $ownClass->id]);
+    }
+
+    public function test_wrapup_report_upload_is_class_scoped(): void
+    {
+        Storage::fake('public');
+
+        $committee = $this->committeeMember('committee');
+        $ownClass = $this->makeClass();
+        $otherClass = $this->makeClass();
+        ClassAdmin::create(['class_id' => $ownClass->id, 'committee_id' => $committee->id, 'assigned_at' => now()]);
+
+        $this->actingAs($committee)
+            ->post(route('class.upload_wrapup_report', $ownClass->id), [
+                'wrapup_report' => UploadedFile::fake()->create('report.pdf', 100),
+            ])
+            ->assertOk();
+        $this->assertNotNull($ownClass->fresh()->wrapup_report_path);
+
+        $this->actingAs($committee)
+            ->postJson(route('class.upload_wrapup_report', $otherClass->id), [
+                'wrapup_report' => UploadedFile::fake()->create('report.pdf', 100),
+            ])
             ->assertForbidden();
     }
 

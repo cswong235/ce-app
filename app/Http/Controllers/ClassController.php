@@ -91,6 +91,8 @@ class ClassController extends Controller
 
     public function update(Request $request, Classes $class): RedirectResponse
     {
+        abort_unless($request->user()->canManageClass($class->id), 403);
+
         $validated = $request->validate([
             'course_profile_id' => ['required', 'integer', 'exists:course_profiles,id'],
             'facilitator_ids' => ['nullable', 'array'],
@@ -123,8 +125,10 @@ class ClassController extends Controller
         return redirect()->route('class');
     }
 
-    public function destroy(Classes $class): RedirectResponse
+    public function destroy(Request $request, Classes $class): RedirectResponse
     {
+        abort_unless($request->user()->canManageClass($class->id), 403);
+
         $class->delete();
 
         return redirect()->route('class');
@@ -141,6 +145,21 @@ class ClassController extends Controller
         $path = $request->file('attendance_record')->store('attendance-records', 'public');
 
         $class->update(['attendance_record_path' => $path]);
+
+        return response()->json(['success' => true, 'path' => $path]);
+    }
+
+    public function uploadWrapupReport(Request $request, Classes $class): JsonResponse
+    {
+        abort_unless($request->user()->canManageClass($class->id), 403);
+
+        $request->validate([
+            'wrapup_report' => ['required', 'file', 'max:20480'],
+        ]);
+
+        $path = $request->file('wrapup_report')->store('wrapup-reports', 'public');
+
+        $class->update(['wrapup_report_path' => $path]);
 
         return response()->json(['success' => true, 'path' => $path]);
     }

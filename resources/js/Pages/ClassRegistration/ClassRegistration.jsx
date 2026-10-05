@@ -195,21 +195,23 @@ export default function ClassRegistration() {
                                                         >
                                                             View
                                                         </button>
-                                                        {canManage && registration.status === 'pending' && (
+                                                        {registration.status === 'pending' && (
                                                             <>
                                                                 <button
+                                                                    disabled={!canManage}
                                                                     onClick={() =>
                                                                         handleApprove(registration)
                                                                     }
-                                                                    className="text-green-600 hover:text-green-900"
+                                                                    className="text-green-600 hover:text-green-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-green-600"
                                                                 >
                                                                     Approve
                                                                 </button>
                                                                 <button
+                                                                    disabled={!canManage}
                                                                     onClick={() =>
                                                                         handleReject(registration)
                                                                     }
-                                                                    className="text-red-600 hover:text-red-900"
+                                                                    className="text-red-600 hover:text-red-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-red-600"
                                                                 >
                                                                     Reject
                                                                 </button>

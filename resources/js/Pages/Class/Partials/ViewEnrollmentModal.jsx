@@ -125,20 +125,18 @@ export default function ViewEnrollmentModal({ enrollment, show, onClose, onUpdat
                                     View receipt
                                 </a>
                             )}
-                            {!readOnly && (
-                                <label className={`rounded border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-indigo-600 transition hover:bg-indigo-50 ${
-                                    uploadingReceipt ? 'cursor-wait opacity-50' : 'cursor-pointer'
-                                }`}>
-                                    {uploadingReceipt ? 'Uploading…' : hasReceipt ? 'Replace' : 'Upload'}
-                                    <input
-                                        type="file"
-                                        accept=".pdf,.jpg,.jpeg,.png"
-                                        className="hidden"
-                                        disabled={uploadingReceipt}
-                                        onChange={(e) => e.target.files?.[0] && uploadReceipt(e.target.files[0])}
-                                    />
-                                </label>
-                            )}
+                            <label className={`rounded border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-indigo-600 transition hover:bg-indigo-50 ${
+                                readOnly ? 'cursor-not-allowed opacity-40' : uploadingReceipt ? 'cursor-wait opacity-50' : 'cursor-pointer'
+                            }`}>
+                                {uploadingReceipt ? 'Uploading…' : hasReceipt ? 'Replace' : 'Upload'}
+                                <input
+                                    type="file"
+                                    accept=".pdf,.jpg,.jpeg,.png"
+                                    className="hidden"
+                                    disabled={readOnly || uploadingReceipt}
+                                    onChange={(e) => e.target.files?.[0] && uploadReceipt(e.target.files[0])}
+                                />
+                            </label>
                         </dd>
                     </div>
                 </dl>
@@ -161,11 +159,11 @@ export default function ViewEnrollmentModal({ enrollment, show, onClose, onUpdat
                     </div>
                     <textarea
                         id="enrollment-testimonial"
-                        className="mt-1.5 block w-full resize-none rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        className="mt-1.5 block w-full resize-none rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:opacity-60"
                         rows="4"
                         value={testimonial}
                         onChange={(e) => setTestimonial(e.target.value)}
-                        readOnly={readOnly}
+                        disabled={readOnly}
                         placeholder="Written testimonial or a YouTube link..."
                     />
                 </div>
@@ -173,16 +171,14 @@ export default function ViewEnrollmentModal({ enrollment, show, onClose, onUpdat
 
             <div className="flex items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-6 py-4">
                 <SecondaryButton type="button" onClick={onClose}>Close</SecondaryButton>
-                {!readOnly && (
-                    <button
-                        type="button"
-                        onClick={saveTestimonial}
-                        disabled={savingTestimonial}
-                        className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        {savingTestimonial ? 'Saving...' : 'Save Changes'}
-                    </button>
-                )}
+                <button
+                    type="button"
+                    onClick={saveTestimonial}
+                    disabled={readOnly || savingTestimonial}
+                    className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    {savingTestimonial ? 'Saving...' : 'Save Changes'}
+                </button>
             </div>
         </Modal>
     );

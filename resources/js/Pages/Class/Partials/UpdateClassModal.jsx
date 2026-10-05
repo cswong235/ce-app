@@ -6,7 +6,8 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import { useForm } from '@inertiajs/react';
-import { useEffect } from 'react';
+import axios from 'axios';
+import { useEffect, useRef, useState } from 'react';
 
 function toTimeInputValue(value) {
     return value ? value.slice(0, 5) : '';
@@ -29,6 +30,17 @@ export default function UpdateClassModal({ show, onClose, classItem, courseProfi
         end_time: '',
     });
 
+    const [graduationItems, setGraduationItems] = useState([]);
+    const [graduationDate, setGraduationDate] = useState('');
+    const [newItemName, setNewItemName] = useState('');
+    const [newItemQty, setNewItemQty] = useState('');
+    const [attendancePath, setAttendancePath] = useState('');
+    const [wrapupPath, setWrapupPath] = useState('');
+    const [uploadingAttendance, setUploadingAttendance] = useState(false);
+    const [uploadingWrapup, setUploadingWrapup] = useState(false);
+    const attendanceInputRef = useRef(null);
+    const wrapupInputRef = useRef(null);
+
     useEffect(() => {
         if (classItem) {
             setData({
@@ -46,6 +58,9 @@ export default function UpdateClassModal({ show, onClose, classItem, courseProfi
                 start_time: toTimeInputValue(classItem.start_time),
                 end_time: toTimeInputValue(classItem.end_time),
             });
+            setGraduationDate(classItem.graduation_date ?? '');
+            setAttendancePath(classItem.attendance_record_path ?? '');
+            setWrapupPath(classItem.wrapup_report_path ?? '');
         }
     }, [classItem]);
 
@@ -55,6 +70,22 @@ export default function UpdateClassModal({ show, onClose, classItem, courseProfi
         }
     }, [data.mode]);
 
+    const refreshExtras = () => {
+        if (!classItem) return;
+        axios.get(route('class.show', classItem.id)).then((res) => {
+            setGraduationItems(res.data.graduationItems);
+            setGraduationDate(res.data.class.graduation_date ?? '');
+            setAttendancePath(res.data.class.attendance_record_path ?? '');
+            setWrapupPath(res.data.class.wrapup_report_path ?? '');
+        });
+    };
+
+    useEffect(() => {
+        if (show && classItem) {
+            refreshExtras();
+        }
+    }, [show, classItem]);
+
     const close = () => {
         reset();
         onClose();
@@ -63,6 +94,58 @@ export default function UpdateClassModal({ show, onClose, classItem, courseProfi
     const submit = (event) => {
         event.preventDefault();
         put(route('class.update', classItem.id), { onSuccess: close });
+    };
+
+    const saveGraduationDate = () => {
+        axios.patch(route('graduation_item.update_date', classItem.id), { graduation_date: graduationDate || null }).then(refreshExtras);
+    };
+
+    const addGraduationItem = () => {
+        if (!newItemName || !newItemQty) return;
+        axios.post(route('graduation_item.store', classItem.id), {
+            item_name: newItemName,
+            quantity: newItemQty,
+        }).then(() => {
+            setNewItemName('');
+            setNewItemQty('');
+            refreshExtras();
+        });
+    };
+
+    const removeGraduationItem = (itemId) => {
+        axios.delete(route('graduation_item.destroy', itemId)).then(refreshExtras);
+    };
+
+    const uploadAttendanceRecord = (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('attendance_record', file);
+
+        setUploadingAttendance(true);
+        axios.post(route('class.upload_attendance_record', classItem.id), formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        }).then(refreshExtras).finally(() => {
+            setUploadingAttendance(false);
+            event.target.value = '';
+        });
+    };
+
+    const uploadWrapupReport = (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('wrapup_report', file);
+
+        setUploadingWrapup(true);
+        axios.post(route('class.upload_wrapup_report', classItem.id), formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        }).then(refreshExtras).finally(() => {
+            setUploadingWrapup(false);
+            event.target.value = '';
+        });
     };
 
     const isPhysicalMode = data.mode === 'physical';
@@ -275,6 +358,150 @@ export default function UpdateClassModal({ show, onClose, classItem, courseProfi
                             </div>
                         </div>
                     </section>
+
+                    <section className="rounded-lg border border-gray-200 bg-white p-5">
+                        <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Graduation</h3>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <TextInput
+                                type="date"
+                                className="block"
+                                value={graduationDate}
+                                onChange={(e) => setGraduationDate(e.target.value)}
+                            />
+                            <SecondaryButton type="button" onClick={saveGraduationDate}
+                                className="rounded border border-indigo-600 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50">
+                                Save Date
+                            </SecondaryButton>
+                        </div>
+
+                        <div className="mt-5">
+                            <InputLabel value="Graduation checklist" />
+                            <div className="mt-2 overflow-hidden rounded-lg border border-gray-200">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                                        <tr>
+                                            <th className="px-3 py-2 font-medium">Item</th>
+                                            <th className="px-3 py-2 font-medium">Quantity</th>
+                                            <th className="px-3 py-2"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {graduationItems.length > 0 ? (
+                                            graduationItems.map((item) => (
+                                                <tr key={item.id}>
+                                                    <td className="px-3 py-2">{item.item_name}</td>
+                                                    <td className="px-3 py-2">{item.quantity}</td>
+                                                    <td className="px-3 py-2 text-right">
+                                                        <SecondaryButton type="button" onClick={() => removeGraduationItem(item.id)}
+                                                            className="rounded border border-red-600 px-2 py-1 text-xs text-red-600 hover:bg-red-50">
+                                                            Remove
+                                                        </SecondaryButton>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="3" className="px-3 py-3 text-center text-gray-400">No checklist items yet.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                                <TextInput
+                                    placeholder="Item name"
+                                    className="min-w-[10rem] flex-1"
+                                    value={newItemName}
+                                    onChange={(e) => setNewItemName(e.target.value)}
+                                />
+                                <TextInput
+                                    type="number"
+                                    placeholder="Qty"
+                                    className="w-24"
+                                    value={newItemQty}
+                                    onChange={(e) => setNewItemQty(e.target.value)}
+                                />
+                                <SecondaryButton type="button" onClick={addGraduationItem}
+                                    className="rounded border border-indigo-600 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50">
+                                    Add
+                                </SecondaryButton>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div className="grid gap-5 sm:grid-cols-2">
+                        <section className="rounded-lg border border-gray-200 bg-white p-5">
+                            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Attendance Record</h3>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                                {attendancePath && (
+                                    <a
+                                        href={`/storage/${attendancePath}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                                    >
+                                        View File
+                                    </a>
+                                )}
+                                <SecondaryButton
+                                    type="button"
+                                    onClick={() => attendanceInputRef.current?.click()}
+                                    disabled={uploadingAttendance}
+                                    className="rounded border border-indigo-600 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50"
+                                >
+                                    {uploadingAttendance
+                                        ? 'Uploading...'
+                                        : attendancePath ? 'Replace File' : 'Upload File'}
+                                </SecondaryButton>
+                                <input
+                                    type="file"
+                                    ref={attendanceInputRef}
+                                    className="hidden"
+                                    disabled={uploadingAttendance}
+                                    onChange={uploadAttendanceRecord}
+                                />
+                            </div>
+                            <p className="mt-2 text-xs text-gray-500">
+                                {attendancePath ? 'One attendance record on file.' : 'No attendance record uploaded yet.'}
+                            </p>
+                        </section>
+
+                        <section className="rounded-lg border border-gray-200 bg-white p-5">
+                            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Wrap-up Report</h3>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                                {wrapupPath && (
+                                    <a
+                                        href={`/storage/${wrapupPath}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                                    >
+                                        View Report
+                                    </a>
+                                )}
+                                <SecondaryButton
+                                    type="button"
+                                    onClick={() => wrapupInputRef.current?.click()}
+                                    disabled={uploadingWrapup}
+                                    className="rounded border border-indigo-600 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50"
+                                >
+                                    {uploadingWrapup
+                                        ? 'Uploading...'
+                                        : wrapupPath ? 'Replace Report' : 'Upload Report'}
+                                </SecondaryButton>
+                                <input
+                                    type="file"
+                                    ref={wrapupInputRef}
+                                    className="hidden"
+                                    disabled={uploadingWrapup}
+                                    onChange={uploadWrapupReport}
+                                />
+                            </div>
+                            <p className="mt-2 text-xs text-gray-500">
+                                {wrapupPath ? 'One wrap-up report on file.' : 'No wrap-up report uploaded yet.'}
+                            </p>
+                        </section>
+                    </div>
                 </div>
 
                 <div className="mt-6 flex justify-end gap-3">

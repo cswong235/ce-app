@@ -52,16 +52,15 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
         Route::get('/class', [ClassController::class, 'index'])->name('class');
         Route::post('/class', [ClassController::class, 'store'])->name('class.store')
             ->middleware('full.access');
-        Route::put('/class/{class}', [ClassController::class, 'update'])->name('class.update')
-            ->middleware('full.access');
-        Route::delete('/class/{class}', [ClassController::class, 'destroy'])->name('class.destroy')
-            ->middleware('full.access');
         Route::get('/class/{class}', [ClassController::class, 'show'])->name('class.show');
 
 
         // Class-scoped: full access, or whoever is assigned as Class Admin of that class
-        // (any committee role). The per-class check is in each controller method.
+        // (any committee role) — for that class only. The per-class check is in each controller method.
+        Route::put('/class/{class}', [ClassController::class, 'update'])->name('class.update');
+        Route::delete('/class/{class}', [ClassController::class, 'destroy'])->name('class.destroy');
         Route::post('/class/{class}/attendance-record', [ClassController::class, 'uploadAttendanceRecord'])->name('class.upload_attendance_record');
+        Route::post('/class/{class}/wrapup-report', [ClassController::class, 'uploadWrapupReport'])->name('class.upload_wrapup_report');
 
         Route::patch('/class/{class}/graduation-date', [GraduationItemController::class, 'updateClassDate'])->name('graduation_item.update_date');
         Route::post('/class/{class}/graduation-items', [GraduationItemController::class, 'store'])->name('graduation_item.store');
